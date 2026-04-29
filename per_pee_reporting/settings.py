@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-=p1ts8uu#3la7+w8jzwx0n_o+*hz+54=)-k@-7s)wlzm*0w+%-"
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-=p1ts8uu#3la7+w8jzwx0n_o+*hz+54=)-k@-7s)wlzm*0w+%-",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() not in {"false", "0", "no"}
 
-ALLOWED_HOSTS = []
+_allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()] or []
 
 
 # Application definition
@@ -118,11 +123,31 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / 'static']
+# Destination de `python manage.py collectstatic` (ne pas committer ce dossier)
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+# En développement : cache en mémoire locale (LocMemCache, sans dépendance).
+# En production, remplacez par Redis ou Memcached via la variable d'environnement
+# DJANGO_CACHE_BACKEND, par exemple :
+#   DJANGO_CACHE_BACKEND=django.core.cache.backends.redis.RedisCache
+#   DJANGO_CACHE_LOCATION=redis://127.0.0.1:6379/1
+CACHES = {
+    "default": {
+        "BACKEND": os.environ.get(
+            "DJANGO_CACHE_BACKEND",
+            "django.core.cache.backends.locmem.LocMemCache",
+        ),
+        "LOCATION": os.environ.get("DJANGO_CACHE_LOCATION", "unique-snowflake"),
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Authentification

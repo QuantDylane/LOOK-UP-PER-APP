@@ -4,6 +4,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Count, Sum, F, Q
 from django.db import transaction
 from django.contrib import messages
+from django.core.cache import cache
 from collections import defaultdict
 import csv
 import io
@@ -1169,44 +1170,53 @@ def metadonnees(request):
     """Page des métadonnées"""
     # ========== DONNÉES FCP ==========
     # Récupérer les FCP uniques (métadonnées) - un seul enregistrement par FCP
-    fcps_raw = ValeurLiquidative.objects.exclude(nom_fcp__isnull=True).exclude(nom_fcp='').order_by('nom_fcp', '-date')
-    
-    # Fonction pour convertir en pourcentage affiché
-    def to_percent(value):
-        if value is None:
-            return None
-        try:
-            v = float(value)
-            # Si la valeur est déjà > 1, c'est probablement déjà en %, sinon multiplier par 100
-            if v <= 1:
-                return round(v * 100, 2)
-            return round(v, 2)
-        except (ValueError, TypeError):
-            return None
-    
-    # Dédupliquer par nom de FCP (garder le plus récent)
-    seen_fcps = set()
-    fcps = []
-    for fcp in fcps_raw:
-        if fcp.nom_fcp not in seen_fcps:
-            seen_fcps.add(fcp.nom_fcp)
-            fcps.append({
-                'nom_fcp': fcp.nom_fcp,
-                'categorie_fond': fcp.categorie_fond,
-                'type_fond': fcp.type_fond,
-                'est_fcp_islamique': fcp.est_fcp_islamique,
-                'horizon_investissement': fcp.horizon_investissement,
-                'benchmark_obligataire': fcp.benchmark_obligataire,
-                'benchmark_brvmc': fcp.benchmark_brvmc,
-                'benchmark_obligataire_pct': to_percent(fcp.benchmark_obligataire),
-                'benchmark_brvmc_pct': to_percent(fcp.benchmark_brvmc),
-                'date_creation': fcp.date_creation,
-                'depositaire': fcp.depositaire,
-                'frais_gestion_ttc': fcp.frais_gestion_ttc or '',
-                'frais_entree_ttc': fcp.frais_entree_ttc or '',
-                'frais_sortie_ttc': fcp.frais_sortie_ttc or '',
-                'echelle_risque': fcp.echelle_risque,
-            })
+    # Le catalogue FCP change rarement : on met en cache 15 minutes.
+    _CACHE_KEY_FCP = "metadonnees_fcps_v1"
+    _CACHE_TTL = 60 * 15  # 15 minutes
+
+    cached_fcp = cache.get(_CACHE_KEY_FCP)
+    if cached_fcp is not None:
+        fcps, seen_fcps = cached_fcp
+    else:
+        fcps_raw = ValeurLiquidative.objects.exclude(nom_fcp__isnull=True).exclude(nom_fcp='').order_by('nom_fcp', '-date')
+
+        # Fonction pour convertir en pourcentage affiché
+        def to_percent(value):
+            if value is None:
+                return None
+            try:
+                v = float(value)
+                # Si la valeur est déjà > 1, c'est probablement déjà en %, sinon multiplier par 100
+                if v <= 1:
+                    return round(v * 100, 2)
+                return round(v, 2)
+            except (ValueError, TypeError):
+                return None
+
+        # Dédupliquer par nom de FCP (garder le plus récent)
+        seen_fcps = set()
+        fcps = []
+        for fcp in fcps_raw:
+            if fcp.nom_fcp not in seen_fcps:
+                seen_fcps.add(fcp.nom_fcp)
+                fcps.append({
+                    'nom_fcp': fcp.nom_fcp,
+                    'categorie_fond': fcp.categorie_fond,
+                    'type_fond': fcp.type_fond,
+                    'est_fcp_islamique': fcp.est_fcp_islamique,
+                    'horizon_investissement': fcp.horizon_investissement,
+                    'benchmark_obligataire': fcp.benchmark_obligataire,
+                    'benchmark_brvmc': fcp.benchmark_brvmc,
+                    'benchmark_obligataire_pct': to_percent(fcp.benchmark_obligataire),
+                    'benchmark_brvmc_pct': to_percent(fcp.benchmark_brvmc),
+                    'date_creation': fcp.date_creation,
+                    'depositaire': fcp.depositaire,
+                    'frais_gestion_ttc': fcp.frais_gestion_ttc or '',
+                    'frais_entree_ttc': fcp.frais_entree_ttc or '',
+                    'frais_sortie_ttc': fcp.frais_sortie_ttc or '',
+                    'echelle_risque': fcp.echelle_risque,
+                })
+        cache.set(_CACHE_KEY_FCP, (fcps, seen_fcps), _CACHE_TTL)
     
     # Statistiques FCP
     total_fcp = len(fcps)
