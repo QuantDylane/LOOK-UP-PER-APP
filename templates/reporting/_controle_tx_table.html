@@ -1,0 +1,93 @@
+{% comment %}
+Partial: ligne par ligne pour les transactions SICAV détectées comme anormales.
+Args attendus :
+  - rows       : iterable de Sicav
+  - empty_msg  : message quand la liste est vide (facultatif)
+{% endcomment %}
+{% if rows %}
+<div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>N° Compte</th>
+                <th>Client</th>
+                <th>Plan</th>
+                <th>FCP</th>
+                <th>Sens</th>
+                <th class="text-end">Quantité</th>
+                <th class="text-end" style="width: 160px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for t in rows %}
+            <tr>
+                <td>
+                    {% if t.date_transaction %}
+                        {{ t.date_transaction|date:"d/m/Y" }}
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Manquante</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.numero_compte %}
+                        <code>{{ t.numero_compte }}</code>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ t.nom_prenom|default:"-" }}</td>
+                <td><small>{{ t.nom_per_pee|default:"-" }}</small></td>
+                <td>{{ t.nom_fcp|default:"-" }}</td>
+                <td>
+                    {% if t.sens == 'souscription' %}
+                        <span class="badge bg-primary">Souscription</span>
+                    {% elif t.sens == 'rachat' %}
+                        <span class="badge bg-secondary">Rachat</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">-</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if t.quantite is None %}
+                        <span class="badge bg-danger">vide</span>
+                    {% else %}
+                        {{ t.quantite|floatformat:4 }}
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'admin:reporting_sicav_change' t.pk %}"
+                           class="btn btn-outline-primary btn-row-action"
+                           target="_blank" rel="noopener"
+                           title="Éditer dans l'admin">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <form method="post"
+                              action="{% url 'reporting:controle_supprimer_sicav' t.pk %}"
+                              onsubmit="return confirm('Supprimer définitivement la transaction SICAV #{{ t.pk }} ?');"
+                              class="d-inline m-0">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-outline-danger btn-row-action"
+                                    title="Supprimer la transaction">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if rows|length >= 100 %}
+    <div class="p-2 text-center text-muted small bg-light border-top">
+        <i class="bi bi-info-circle me-1"></i>Affichage limité aux 100 premières occurrences.
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="p-3 text-muted text-center">
+    <i class="bi bi-check-circle text-success me-1"></i>{{ empty_msg|default:"Aucune donnée." }}
+</div>
+{% endif %}

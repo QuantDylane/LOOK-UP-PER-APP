@@ -1,0 +1,838 @@
+{% extends 'base.html' %}
+
+{% block title %}À propos - Reporting{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-info-circle-fill me-2"></i>À propos
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ======== Charte : nuances de bleu & gris, fond blanc, police Cambria ======== */
+    .about-page, .about-page * { font-family: 'Cambria', 'Georgia', 'Times New Roman', serif; }
+    .about-illustration { width: 100%; height: auto; display: block; }
+    .illustration-box {
+        background: linear-gradient(135deg, #F4F7FB 0%, #E8EEF4 100%);
+        border: 1px solid #CFDCEB;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin: 1rem 0;
+    }
+    .illustration-caption {
+        color: #52606D;
+        font-size: 0.85rem;
+        text-align: center;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+    .formula-box {
+        background: #FFFFFF;
+        border: 1px solid #CFDCEB;
+        border-radius: 8px;
+        color: #0A2342;
+    }
+    .concept-illus {
+        max-width: 260px;
+        margin: 0 auto 0.75rem auto;
+        display: block;
+    }
+    .hero-illus { max-width: 520px; margin: 0 auto; }
+    .risk-gauge { max-width: 380px; margin: 0 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid about-page">
+    <!-- About Section -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="about-logo mb-4">
+                        <svg class="about-illustration hero-illus" viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg" aria-label="Illustration reporting">
+                            <defs>
+                                <linearGradient id="heroSky" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#FFFFFF"/>
+                                    <stop offset="100%" stop-color="#E8EEF4"/>
+                                </linearGradient>
+                                <linearGradient id="heroBar" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#3A6CA8"/>
+                                    <stop offset="100%" stop-color="#0A2342"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="0" y="0" width="520" height="220" fill="url(#heroSky)" rx="10"/>
+                            <!-- Grille -->
+                            <g stroke="#CFDCEB" stroke-width="1">
+                                <line x1="40" y1="40" x2="480" y2="40"/>
+                                <line x1="40" y1="90" x2="480" y2="90"/>
+                                <line x1="40" y1="140" x2="480" y2="140"/>
+                                <line x1="40" y1="180" x2="480" y2="180"/>
+                            </g>
+                            <!-- Barres -->
+                            <g fill="url(#heroBar)">
+                                <rect x="70"  y="110" width="30" height="70" rx="3"/>
+                                <rect x="120" y="80"  width="30" height="100" rx="3"/>
+                                <rect x="170" y="95"  width="30" height="85" rx="3"/>
+                                <rect x="220" y="55"  width="30" height="125" rx="3"/>
+                                <rect x="270" y="75"  width="30" height="105" rx="3"/>
+                            </g>
+                            <!-- Courbe performance -->
+                            <polyline points="55,160 100,130 150,115 200,95 250,70 300,60 360,45 420,50 470,30"
+                                      fill="none" stroke="#1E4C82" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <g fill="#0A2342">
+                                <circle cx="100" cy="130" r="4"/>
+                                <circle cx="200" cy="95"  r="4"/>
+                                <circle cx="300" cy="60"  r="4"/>
+                                <circle cx="420" cy="50"  r="4"/>
+                                <circle cx="470" cy="30"  r="5"/>
+                            </g>
+                            <!-- Axe -->
+                            <line x1="40" y1="180" x2="480" y2="180" stroke="#52606D" stroke-width="2"/>
+                            <line x1="40" y1="180" x2="40"  y2="30"  stroke="#52606D" stroke-width="2"/>
+                            <!-- Étiquettes -->
+                            <text x="260" y="210" text-anchor="middle" fill="#3E4C59" font-size="12" font-family="Cambria, Georgia, serif">Performance et encours des plans d'épargne</text>
+                        </svg>
+                    </div>
+                    <h2 class="mb-3">PER/PEE Reporting System</h2>
+                    <p class="text-muted lead">
+                        Application de gestion et de reporting pour les Plans d'Épargne Entreprise (PEE) 
+                        et Plans d'Épargne Retraite (PER)
+                    </p>
+                    <hr class="my-4">
+                    <div class="version-info">
+                        <span class="badge bg-primary fs-6">Version 1.0.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Introduction aux Concepts de Performance -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Comprendre la Mesure de Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="bi bi-question-circle me-1"></i> Pourquoi mesurer la performance ?</h6>
+                            <p>La mesure de performance permet de :</p>
+                            <ul>
+                                <li><strong>Évaluer</strong> la qualité de la gestion du portefeuille</li>
+                                <li><strong>Comparer</strong> les résultats avec un benchmark de référence</li>
+                                <li><strong>Communiquer</strong> de manière transparente avec les clients</li>
+                                <li><strong>Prendre des décisions</strong> d'allocation éclairées</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="bi bi-signpost-split me-1"></i> TWR vs MWR : Deux approches</h6>
+                            <div class="alert alert-light border">
+                                <p class="mb-2"><strong>TWR (Time-Weighted Return)</strong></p>
+                                <p class="small text-muted mb-3">Mesure la performance du gérant indépendamment des flux. Utilisée pour comparer les gérants entre eux.</p>
+                                <p class="mb-2"><strong>MWR (Money-Weighted Return)</strong></p>
+                                <p class="small text-muted mb-0">Mesure le rendement réel pour l'investisseur, incluant l'impact du timing de ses flux. <span class="badge bg-success">Méthode Dietz</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Cette application utilise la méthode Dietz (MWR)</strong> : elle reflète le rendement réel obtenu par chaque client, 
+                        en tenant compte du moment où il a investi ou désinvesti ses capitaux.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Méthodologie de Calcul de Performance -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Méthodologie de Calcul de Performance</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">
+                        L'application utilise les méthodes <strong>Dietz</strong> pour calculer la performance des portefeuilles.
+                        Ces méthodes sont reconnues dans l'industrie de la gestion d'actifs car elles prennent en compte 
+                        l'impact des flux entrants et sortants (souscriptions et rachats) sur la période analysée.
+                    </p>
+                    
+                    <!-- Principe fondamental -->
+                    <div class="alert alert-secondary mb-4">
+                        <h6 class="alert-heading"><i class="bi bi-key me-1"></i> Principe Fondamental</h6>
+                        <p class="mb-0">
+                            Le <strong>gain net</strong> d'un portefeuille est la différence entre sa valeur finale et sa valeur initiale, 
+                            <strong>diminuée des flux nets</strong> (souscriptions - rachats). La performance est ce gain net rapporté 
+                            au capital moyen investi sur la période.
+                        </p>
+                    </div>
+
+                    <!-- Méthode Dietz Simple -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-1-circle-fill text-primary me-2"></i>Méthode Dietz Simple</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                La méthode Dietz simple suppose que tous les flux de la période ont lieu au <strong>milieu de la période</strong>.
+                                C'est une approximation simple mais efficace lorsque les flux sont relativement réguliers.
+                            </p>
+                            
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading"><i class="bi bi-calculator me-1"></i> Formule :</h6>
+                                <div class="formula-box text-center py-3" style="font-size: 1.2em;">
+                                    R = (V<sub>f</sub> - V<sub>i</sub> - ΣF) / (V<sub>i</sub> + 0.5 × ΣF)
+                                </div>
+                            </div>
+
+                            <!-- Illustration : flux supposés au milieu de période -->
+                            <div class="illustration-box">
+                                <svg class="about-illustration" viewBox="0 0 560 160" xmlns="http://www.w3.org/2000/svg" aria-label="Flux au milieu de la période">
+                                    <!-- Axe temps -->
+                                    <line x1="40" y1="110" x2="520" y2="110" stroke="#52606D" stroke-width="2"/>
+                                    <polygon points="520,110 510,105 510,115" fill="#52606D"/>
+                                    <!-- Graduations -->
+                                    <g stroke="#7B8794" stroke-width="1">
+                                        <line x1="60"  y1="105" x2="60"  y2="115"/>
+                                        <line x1="280" y1="100" x2="280" y2="120"/>
+                                        <line x1="500" y1="105" x2="500" y2="115"/>
+                                    </g>
+                                    <text x="60"  y="135" text-anchor="middle" fill="#3E4C59" font-size="12">Début (V<tspan baseline-shift="sub" font-size="9">i</tspan>)</text>
+                                    <text x="280" y="140" text-anchor="middle" fill="#0A2342" font-size="12" font-weight="bold">Milieu de période (T/2)</text>
+                                    <text x="500" y="135" text-anchor="middle" fill="#3E4C59" font-size="12">Fin (V<tspan baseline-shift="sub" font-size="9">f</tspan>)</text>
+                                    <!-- Valeurs initiale/finale -->
+                                    <circle cx="60"  cy="110" r="8" fill="#1E4C82"/>
+                                    <circle cx="500" cy="110" r="8" fill="#0A2342"/>
+                                    <!-- Flux concentrés au milieu -->
+                                    <g>
+                                        <line x1="260" y1="40" x2="260" y2="100" stroke="#2C5282" stroke-width="2"/>
+                                        <polygon points="260,100 255,90 265,90" fill="#2C5282"/>
+                                        <text x="260" y="30" text-anchor="middle" fill="#0A2342" font-size="12" font-weight="bold">+ Souscription</text>
+                                        <line x1="300" y1="40" x2="300" y2="100" stroke="#52606D" stroke-width="2" stroke-dasharray="4 3"/>
+                                        <polygon points="300,100 295,90 305,90" fill="#52606D"/>
+                                        <text x="300" y="30" text-anchor="middle" fill="#323F4B" font-size="12" font-weight="bold">- Rachat</text>
+                                    </g>
+                                    <!-- Titre -->
+                                    <text x="280" y="15" text-anchor="middle" fill="#0A2342" font-size="13" font-weight="bold">Hypothèse Dietz Simple : tous les flux au milieu de la période</text>
+                                </svg>
+                                <div class="illustration-caption">La méthode simple suppose que chaque souscription et chaque rachat intervient à T/2.</div>
+                            </div>
+                            
+                            <p><strong>Où :</strong></p>
+                            <ul>
+                                <li><strong>R</strong> = Rendement (Performance) de la période</li>
+                                <li><strong>V<sub>f</sub></strong> = Valeur finale du portefeuille (fin de période)</li>
+                                <li><strong>V<sub>i</sub></strong> = Valeur initiale du portefeuille (début de période)</li>
+                                <li><strong>ΣF</strong> = Somme des flux nets = Souscriptions - Rachats</li>
+                            </ul>
+
+                            <div class="card bg-light mt-3">
+                                <div class="card-header">
+                                    <strong><i class="bi bi-lightbulb me-1"></i> Exemple Pratique</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p>Un client détient un portefeuille PEE avec :</p>
+                                    <ul>
+                                        <li>Valeur initiale (01/01/2024) : <strong>10 000 000 FCFA</strong></li>
+                                        <li>Souscription en mars : <strong>+2 000 000 FCFA</strong></li>
+                                        <li>Rachat en août : <strong>-500 000 FCFA</strong></li>
+                                        <li>Valeur finale (31/12/2024) : <strong>13 500 000 FCFA</strong></li>
+                                    </ul>
+                                    <p><strong>Calcul :</strong></p>
+                                    <ul>
+                                        <li>Flux nets : ΣF = 2 000 000 - 500 000 = <strong>1 500 000 FCFA</strong></li>
+                                        <li>Numérateur : 13 500 000 - 10 000 000 - 1 500 000 = <strong>2 000 000 FCFA</strong></li>
+                                        <li>Dénominateur : 10 000 000 + 0.5 × 1 500 000 = <strong>10 750 000 FCFA</strong></li>
+                                        <li>Performance : R = 2 000 000 / 10 750 000 = <strong class="text-success">18,60%</strong></li>
+                                    </ul>
+                                    <div class="alert alert-success mb-0">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Le portefeuille a généré une performance de <strong>+18,60%</strong> sur l'année 2024.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Méthode Dietz Modifiée -->
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-2-circle-fill text-success me-2"></i>Méthode Dietz Modifiée</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                La méthode Dietz modifiée est plus précise car elle <strong>pondère chaque flux</strong> en fonction 
+                                de sa date d'occurrence dans la période. Les flux proches du début de période ont plus d'impact 
+                                sur le dénominateur que les flux proches de la fin.
+                            </p>
+                            
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading"><i class="bi bi-calculator me-1"></i> Formule :</h6>
+                                <div class="formula-box text-center py-3" style="font-size: 1.2em;">
+                                    R = (V<sub>f</sub> - V<sub>i</sub> - ΣF) / (V<sub>i</sub> + Σ(w<sub>i</sub> × F<sub>i</sub>))
+                                </div>
+                                <div class="text-center mt-2">
+                                    Avec le poids : <strong>w<sub>i</sub> = (T - t<sub>i</sub>) / T</strong>
+                                </div>
+                            </div>
+
+                            <!-- Illustration : flux pondérés par leur date -->
+                            <div class="illustration-box">
+                                <svg class="about-illustration" viewBox="0 0 560 190" xmlns="http://www.w3.org/2000/svg" aria-label="Flux pondérés par leur date">
+                                    <text x="280" y="18" text-anchor="middle" fill="#0A2342" font-size="13" font-weight="bold">Dietz Modifiée : chaque flux est pondéré par sa position dans le temps</text>
+                                    <!-- Axe temps -->
+                                    <line x1="40" y1="140" x2="520" y2="140" stroke="#52606D" stroke-width="2"/>
+                                    <polygon points="520,140 510,135 510,145" fill="#52606D"/>
+                                    <g stroke="#7B8794" stroke-width="1">
+                                        <line x1="60"  y1="135" x2="60"  y2="145"/>
+                                        <line x1="500" y1="135" x2="500" y2="145"/>
+                                    </g>
+                                    <text x="60"  y="165" text-anchor="middle" fill="#3E4C59" font-size="12">t = 0 (V<tspan baseline-shift="sub" font-size="9">i</tspan>)</text>
+                                    <text x="500" y="165" text-anchor="middle" fill="#3E4C59" font-size="12">t = T (V<tspan baseline-shift="sub" font-size="9">f</tspan>)</text>
+                                    <circle cx="60"  cy="140" r="8" fill="#1E4C82"/>
+                                    <circle cx="500" cy="140" r="8" fill="#0A2342"/>
+                                    <!-- Flux avec barres de poids décroissantes -->
+                                    <g>
+                                        <!-- Flux 1 : tôt → poids élevé -->
+                                        <rect x="145" y="60" width="20" height="78" fill="#0A2342" rx="2"/>
+                                        <text x="155" y="55" text-anchor="middle" fill="#0A2342" font-size="11" font-weight="bold">w₁ ≈ 0,80</text>
+                                        <text x="155" y="180" text-anchor="middle" fill="#3E4C59" font-size="11">Flux tôt</text>
+                                        <!-- Flux 2 : milieu → poids moyen -->
+                                        <rect x="275" y="95" width="20" height="43" fill="#2C5282" rx="2"/>
+                                        <text x="285" y="90" text-anchor="middle" fill="#0A2342" font-size="11" font-weight="bold">w₂ ≈ 0,50</text>
+                                        <text x="285" y="180" text-anchor="middle" fill="#3E4C59" font-size="11">Flux milieu</text>
+                                        <!-- Flux 3 : tard → poids faible -->
+                                        <rect x="405" y="118" width="20" height="20" fill="#6B8FBF" rx="2"/>
+                                        <text x="415" y="113" text-anchor="middle" fill="#0A2342" font-size="11" font-weight="bold">w₃ ≈ 0,18</text>
+                                        <text x="415" y="180" text-anchor="middle" fill="#3E4C59" font-size="11">Flux tardif</text>
+                                    </g>
+                                </svg>
+                                <div class="illustration-caption">Plus un flux survient tôt dans la période, plus son poids dans le dénominateur est important.</div>
+                            </div>
+                            
+                            <p><strong>Où :</strong></p>
+                            <ul>
+                                <li><strong>R</strong> = Rendement (Performance) de la période</li>
+                                <li><strong>V<sub>f</sub></strong> = Valeur finale du portefeuille</li>
+                                <li><strong>V<sub>i</sub></strong> = Valeur initiale du portefeuille</li>
+                                <li><strong>ΣF</strong> = Somme des flux nets</li>
+                                <li><strong>F<sub>i</sub></strong> = Montant du flux i (positif pour souscription, négatif pour rachat)</li>
+                                <li><strong>w<sub>i</sub></strong> = Poids temporel du flux i</li>
+                                <li><strong>T</strong> = Nombre total de jours de la période</li>
+                                <li><strong>t<sub>i</sub></strong> = Nombre de jours entre le début de période et le flux i</li>
+                            </ul>
+
+                            <div class="card bg-light mt-3">
+                                <div class="card-header">
+                                    <strong><i class="bi bi-lightbulb me-1"></i> Exemple Pratique</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p>Reprenons le même portefeuille PEE avec les dates précises :</p>
+                                    <ul>
+                                        <li>Valeur initiale (01/01/2024) : <strong>10 000 000 FCFA</strong></li>
+                                        <li>Souscription le 15/03/2024 (jour 74) : <strong>+2 000 000 FCFA</strong></li>
+                                        <li>Rachat le 20/08/2024 (jour 232) : <strong>-500 000 FCFA</strong></li>
+                                        <li>Valeur finale (31/12/2024) : <strong>13 500 000 FCFA</strong></li>
+                                        <li>Période T = 366 jours (année bissextile)</li>
+                                    </ul>
+                                    <p><strong>Calcul des poids :</strong></p>
+                                    <ul>
+                                        <li>Poids souscription : w<sub>1</sub> = (366 - 74) / 366 = <strong>0,798</strong></li>
+                                        <li>Poids rachat : w<sub>2</sub> = (366 - 232) / 366 = <strong>0,366</strong></li>
+                                    </ul>
+                                    <p><strong>Calcul des flux pondérés :</strong></p>
+                                    <ul>
+                                        <li>Flux pondérés = (0,798 × 2 000 000) + (0,366 × (-500 000))</li>
+                                        <li>Flux pondérés = 1 596 000 - 183 000 = <strong>1 413 000 FCFA</strong></li>
+                                    </ul>
+                                    <p><strong>Calcul final :</strong></p>
+                                    <ul>
+                                        <li>Numérateur : 13 500 000 - 10 000 000 - 1 500 000 = <strong>2 000 000 FCFA</strong></li>
+                                        <li>Dénominateur : 10 000 000 + 1 413 000 = <strong>11 413 000 FCFA</strong></li>
+                                        <li>Performance : R = 2 000 000 / 11 413 000 = <strong class="text-success">17,52%</strong></li>
+                                    </ul>
+                                    <div class="alert alert-success mb-0">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Avec la méthode Dietz modifiée, la performance est de <strong>+17,52%</strong> 
+                                        (vs 18,60% avec la méthode simple).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparaison des méthodes -->
+                    <div class="card border-warning mb-4">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Comparaison des Méthodes</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Critère</th>
+                                            <th class="text-center">Dietz Simple</th>
+                                            <th class="text-center">Dietz Modifiée</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Hypothèse sur les flux</strong></td>
+                                            <td class="text-center">Tous au milieu de période</td>
+                                            <td class="text-center">À leur date réelle</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Précision</strong></td>
+                                            <td class="text-center"><span class="badge bg-warning">Moyenne</span></td>
+                                            <td class="text-center"><span class="badge bg-success">Élevée</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Complexité de calcul</strong></td>
+                                            <td class="text-center"><span class="badge bg-success">Simple</span></td>
+                                            <td class="text-center"><span class="badge bg-warning">Moyenne</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Recommandé quand</strong></td>
+                                            <td class="text-center">Flux peu nombreux et réguliers</td>
+                                            <td class="text-center">Flux importants ou concentrés</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <strong>Recommandation :</strong> Pour une analyse précise, privilégiez la méthode <strong>Dietz Modifiée</strong>, 
+                                en particulier lorsque les flux de souscription/rachat sont concentrés au début ou à la fin de la période.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interprétation des résultats -->
+                    <div class="card border-dark">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0"><i class="bi bi-eye me-2"></i>Comment Interpréter les Résultats</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-dark"><i class="bi bi-check2-circle text-success me-1"></i> Ce que signifie la performance</h6>
+                                    <ul class="small">
+                                        <li>Une performance de <span class="text-success fw-bold">+10%</span> signifie que le capital a généré un rendement de 10% sur la période</li>
+                                        <li>Une performance de <span class="text-danger fw-bold">-5%</span> indique une perte de 5% de la valeur</li>
+                                        <li>La performance tient compte des flux : les souscriptions "diluent" le gain, les rachats le "concentrent"</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-dark"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Points d'attention</h6>
+                                    <ul class="small">
+                                        <li>Comparez toujours sur des <strong>périodes identiques</strong></li>
+                                        <li>Une performance passée <strong>ne garantit pas</strong> les résultats futurs</li>
+                                        <li>Tenez compte du <strong>niveau de risque</strong> : un fonds actions est plus volatile qu'un fonds obligataire</li>
+                                        <li>Comparez avec le <strong>benchmark</strong> pour évaluer la qualité de la gestion</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="alert alert-secondary mt-3 mb-0">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                <strong>Astuce :</strong> Utilisez la méthode Dietz Simple pour un aperçu rapide, et la méthode Dietz Modifiée 
+                                pour des analyses détaillées ou des rapports officiels.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notions Essentielles -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Notions Essentielles</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Illustration d'ensemble : Souscriptions → FCP → VL → Parts → Portefeuille -->
+                    <div class="illustration-box mb-4">
+                        <svg class="about-illustration" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" aria-label="Schéma d'un investissement en FCP">
+                            <defs>
+                                <marker id="arrHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                                    <polygon points="0,0 8,4 0,8" fill="#1E4C82"/>
+                                </marker>
+                            </defs>
+                            <!-- Investisseur -->
+                            <rect x="20" y="60" width="120" height="60" fill="#E8EEF4" stroke="#1E4C82" stroke-width="2" rx="8"/>
+                            <text x="80" y="85" text-anchor="middle" fill="#0A2342" font-size="13" font-weight="bold">Investisseur</text>
+                            <text x="80" y="105" text-anchor="middle" fill="#3E4C59" font-size="11">Souscription / Rachat</text>
+                            <!-- Flèche -->
+                            <line x1="145" y1="90" x2="215" y2="90" stroke="#1E4C82" stroke-width="2" marker-end="url(#arrHead)"/>
+                            <!-- FCP -->
+                            <rect x="220" y="40" width="160" height="100" fill="#CFDCEB" stroke="#103356" stroke-width="2" rx="8"/>
+                            <text x="300" y="65" text-anchor="middle" fill="#0A2342" font-size="14" font-weight="bold">FCP</text>
+                            <text x="300" y="85" text-anchor="middle" fill="#3E4C59" font-size="11">Actions, Obligations,</text>
+                            <text x="300" y="100" text-anchor="middle" fill="#3E4C59" font-size="11">Diversifié…</text>
+                            <text x="300" y="125" text-anchor="middle" fill="#103356" font-size="12" font-style="italic">VL quotidienne</text>
+                            <!-- Flèche -->
+                            <line x1="385" y1="90" x2="455" y2="90" stroke="#1E4C82" stroke-width="2" marker-end="url(#arrHead)"/>
+                            <!-- Parts -->
+                            <rect x="460" y="60" width="120" height="60" fill="#E8EEF4" stroke="#1E4C82" stroke-width="2" rx="8"/>
+                            <text x="520" y="85" text-anchor="middle" fill="#0A2342" font-size="13" font-weight="bold">Parts détenues</text>
+                            <text x="520" y="105" text-anchor="middle" fill="#3E4C59" font-size="11">Quantité × VL</text>
+                            <!-- Flèche -->
+                            <line x1="585" y1="90" x2="655" y2="90" stroke="#1E4C82" stroke-width="2" marker-end="url(#arrHead)"/>
+                            <!-- Portefeuille -->
+                            <rect x="600" y="40" width="110" height="100" fill="#0A2342" rx="8"/>
+                            <text x="655" y="70" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="bold">PEE / PER</text>
+                            <text x="655" y="95" text-anchor="middle" fill="#CFDCEB" font-size="11">Encours</text>
+                            <text x="655" y="115" text-anchor="middle" fill="#CFDCEB" font-size="11">Performance</text>
+                            <!-- Titre -->
+                            <text x="360" y="20" text-anchor="middle" fill="#0A2342" font-size="13" font-weight="bold">Le cycle d'un investissement en Plan d'Épargne</text>
+                            <!-- Signal flux retour -->
+                            <path d="M 80 120 Q 360 170 655 120" fill="none" stroke="#7B8794" stroke-width="1" stroke-dasharray="3 3"/>
+                            <text x="360" y="165" text-anchor="middle" fill="#52606D" font-size="10" font-style="italic">Flux nets, plus-value latente, rachats…</text>
+                        </svg>
+                    </div>
+
+                    <div class="row">
+                        <!-- Notion 1: Valeur Liquidative -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-cash-stack me-1"></i> Valeur Liquidative (VL)
+                                    </h6>
+                                    <svg class="about-illustration concept-illus" viewBox="0 0 260 90" xmlns="http://www.w3.org/2000/svg" aria-label="Évolution VL">
+                                        <line x1="10" y1="75" x2="250" y2="75" stroke="#52606D" stroke-width="1.5"/>
+                                        <line x1="10" y1="75" x2="10"  y2="10" stroke="#52606D" stroke-width="1.5"/>
+                                        <polyline points="15,65 45,55 75,60 110,45 140,50 175,35 210,28 245,20"
+                                                  fill="none" stroke="#1E4C82" stroke-width="2.5" stroke-linecap="round"/>
+                                        <g fill="#0A2342">
+                                            <circle cx="45"  cy="55" r="2.5"/>
+                                            <circle cx="110" cy="45" r="2.5"/>
+                                            <circle cx="175" cy="35" r="2.5"/>
+                                            <circle cx="245" cy="20" r="2.5"/>
+                                        </g>
+                                        <text x="130" y="88" text-anchor="middle" fill="#52606D" font-size="10">VL quotidienne d'un FCP</text>
+                                    </svg>
+                                    <p class="card-text small">
+                                        La <strong>VL</strong> représente la valeur d'une part de FCP à une date donnée. 
+                                        Elle est calculée en divisant l'actif net total du fonds par le nombre de parts en circulation.
+                                    </p>
+                                    <div class="formula-box bg-white p-2 rounded text-center mb-2">
+                                        <small><strong>VL = Actif Net / Nombre de parts</strong></small>
+                                    </div>
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        La VL évolue quotidiennement en fonction de la valorisation des actifs du fonds.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notion 2: Coût Moyen Pondéré -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-calculator-fill me-1"></i> Coût Moyen Pondéré (CMP)
+                                    </h6>
+                                    <svg class="about-illustration concept-illus" viewBox="0 0 260 90" xmlns="http://www.w3.org/2000/svg" aria-label="CMP à partir des FCP">
+                                        <!-- Souscriptions -->
+                                        <rect x="20"  y="40" width="30" height="35" fill="#2C5282" rx="2"/>
+                                        <rect x="70"  y="28" width="30" height="47" fill="#1E4C82" rx="2"/>
+                                        <rect x="120" y="48" width="30" height="27" fill="#3A6CA8" rx="2"/>
+                                        <text x="35"  y="85" text-anchor="middle" fill="#52606D" font-size="9">VL₁</text>
+                                        <text x="85"  y="85" text-anchor="middle" fill="#52606D" font-size="9">VL₂</text>
+                                        <text x="135" y="85" text-anchor="middle" fill="#52606D" font-size="9">VL₃</text>
+                                        <!-- Flèche vers CMP -->
+                                        <line x1="160" y1="55" x2="190" y2="55" stroke="#0A2342" stroke-width="2" marker-end="url(#arrHead)"/>
+                                        <rect x="190" y="35" width="65" height="40" fill="#0A2342" rx="4"/>
+                                        <text x="222" y="52" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="bold">CMP</text>
+                                        <text x="222" y="68" text-anchor="middle" fill="#CFDCEB" font-size="9">issu des FCP</text>
+                                        <text x="130" y="15" text-anchor="middle" fill="#0A2342" font-size="10" font-weight="bold">Chaque souscription valorisée à la VL du FCP</text>
+                                    </svg>
+                                    <p class="card-text small">
+                                        Le <strong>CMP</strong> est le prix moyen d'acquisition des parts. Dans cette application, il est 
+                                        <strong>calculé à partir des FCP</strong> : chaque souscription (ou rachat) est valorisée à la 
+                                        <strong>Valeur Liquidative du FCP à la date de la transaction</strong>.
+                                    </p>
+                                    <div class="formula-box bg-white p-2 rounded text-center mb-2">
+                                        <small><strong>CMP<sub>transaction</sub> = VL<sub>FCP</sub>(date de la transaction)</strong></small>
+                                    </div>
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Le CMP permet de calculer le coût total d'acquisition et donc la plus-value latente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notion 3: Plus-value latente -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-graph-up-arrow me-1"></i> Plus-value Latente
+                                    </h6>
+                                    <p class="card-text small">
+                                        La <strong>plus-value latente</strong> représente le gain (ou la perte) potentiel(le) 
+                                        sur un investissement qui n'a pas encore été réalisé(e) (vendu).
+                                    </p>
+                                    <div class="formula-box bg-white p-2 rounded text-center mb-2">
+                                        <small><strong>PV Latente = (VL actuelle - CMP) × Quantité</strong></small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success small">PV &gt; 0 : Gain latent</span>
+                                        <span class="badge bg-danger small">PV &lt; 0 : Perte latente</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notion 4: Flux (Souscription/Rachat) -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Flux : Souscription & Rachat
+                                    </h6>
+                                    <p class="card-text small">
+                                        Les <strong>flux</strong> représentent les mouvements de capitaux entrants (souscriptions) 
+                                        et sortants (rachats) sur un portefeuille.
+                                    </p>
+                                    <ul class="small mb-2">
+                                        <li><strong>Souscription (+)</strong> : Achat de nouvelles parts</li>
+                                        <li><strong>Rachat (-)</strong> : Vente de parts existantes</li>
+                                    </ul>
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Les flux affectent le calcul de performance car ils modifient le capital investi.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notion 5: Benchmark -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-rulers me-1"></i> Benchmark (Indice de Référence)
+                                    </h6>
+                                    <p class="card-text small">
+                                        Un <strong>benchmark</strong> est un indice de référence permettant de comparer 
+                                        la performance d'un fonds à celle du marché.
+                                    </p>
+                                    <ul class="small mb-2">
+                                        <li><strong>BRVMC</strong> : Indice actions de la BRVM</li>
+                                        <li><strong>Obligataire</strong> : Indice obligations</li>
+                                    </ul>
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Un fonds peut avoir un benchmark composite (ex: 60% BRVMC + 40% Obligataire).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notion 6: Échelle de Risque -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-speedometer2 me-1"></i> Échelle de Risque (SRRI)
+                                    </h6>
+                                    <p class="card-text small">
+                                        L'<strong>échelle de risque</strong> (de 1 à 7) indique le niveau de volatilité 
+                                        et donc de risque d'un fonds.
+                                    </p>
+                                    <svg class="about-illustration risk-gauge" viewBox="0 0 380 110" xmlns="http://www.w3.org/2000/svg" aria-label="Échelle de risque SRRI">
+                                        <!-- Cases 1 à 7 en dégradé de bleu vers gris foncé -->
+                                        <g stroke="#FFFFFF" stroke-width="2">
+                                            <rect x="10"  y="30" width="50" height="40" fill="#A7BED9"/>
+                                            <rect x="60"  y="30" width="50" height="40" fill="#6B8FBF"/>
+                                            <rect x="110" y="30" width="50" height="40" fill="#3A6CA8"/>
+                                            <rect x="160" y="30" width="50" height="40" fill="#2C5282"/>
+                                            <rect x="210" y="30" width="50" height="40" fill="#1E4C82"/>
+                                            <rect x="260" y="30" width="50" height="40" fill="#103356"/>
+                                            <rect x="310" y="30" width="50" height="40" fill="#0A2342"/>
+                                        </g>
+                                        <g fill="#FFFFFF" font-size="14" font-weight="bold" font-family="Cambria, Georgia, serif" text-anchor="middle">
+                                            <text x="35"  y="56">1</text>
+                                            <text x="85"  y="56">2</text>
+                                            <text x="135" y="56">3</text>
+                                            <text x="185" y="56">4</text>
+                                            <text x="235" y="56">5</text>
+                                            <text x="285" y="56">6</text>
+                                            <text x="335" y="56">7</text>
+                                        </g>
+                                        <text x="35"  y="90" text-anchor="middle" fill="#3E4C59" font-size="10">Faible</text>
+                                        <text x="185" y="90" text-anchor="middle" fill="#3E4C59" font-size="10">Modéré</text>
+                                        <text x="335" y="90" text-anchor="middle" fill="#3E4C59" font-size="10">Très élevé</text>
+                                        <text x="190" y="20" text-anchor="middle" fill="#0A2342" font-size="11" font-weight="bold">Échelle SRRI</text>
+                                    </svg>
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Plus le risque est élevé, plus le potentiel de gain (et de perte) est important.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Glossaire -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-book me-2"></i>Glossaire</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl>
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> PEE (Plan d'Épargne Entreprise)</dt>
+                                <dd class="text-muted ms-3">Dispositif d'épargne salariale collectif permettant aux salariés de se constituer un portefeuille de valeurs mobilières avec l'aide de l'entreprise. Blocage minimum de 5 ans sauf cas de déblocage anticipé.</dd>
+                                
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> PER (Plan d'Épargne Retraite)</dt>
+                                <dd class="text-muted ms-3">Produit d'épargne à long terme permettant de se constituer un capital pour la retraite avec des avantages fiscaux. Les sommes sont bloquées jusqu'à la retraite sauf cas de déblocage anticipé.</dd>
+                                
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> FCP (Fonds Commun de Placement)</dt>
+                                <dd class="text-muted ms-3">Portefeuille de valeurs mobilières géré par une société de gestion pour le compte des porteurs de parts. Le FCP n'a pas de personnalité morale.</dd>
+
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> SICAV</dt>
+                                <dd class="text-muted ms-3">Société d'Investissement à Capital Variable. Contrairement au FCP, la SICAV a une personnalité morale et les investisseurs sont actionnaires.</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl>
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> Valeur Liquidative (VL)</dt>
+                                <dd class="text-muted ms-3">Valeur d'une part de FCP à une date donnée, calculée en divisant l'actif net du fonds par le nombre de parts.</dd>
+                                
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> CMP (Coût Moyen Pondéré)</dt>
+                                <dd class="text-muted ms-3">Prix moyen d'acquisition des parts. Dans cette application, il est calculé à partir des FCP : chaque transaction est valorisée à la Valeur Liquidative du FCP à sa date.</dd>
+                                
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> Plus-value latente</dt>
+                                <dd class="text-muted ms-3">Différence entre la valeur actuelle du portefeuille et son coût d'acquisition total. Elle devient "réalisée" lors de la vente.</dd>
+
+                                <dt><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5em;"></i> Dépositaire</dt>
+                                <dd class="text-muted ms-3">Établissement (généralement une banque) qui conserve les actifs du fonds et contrôle la régularité des opérations de la société de gestion.</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-stars me-2"></i>Fonctionnalités</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-bar-chart-fill text-primary me-2"></i>
+                                <span>Analyse PEE/PER avec calcul de performance Dietz</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-person-fill text-primary me-2"></i>
+                                <span>Analyse détaillée par client</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-database-fill text-primary me-2"></i>
+                                <span>Gestion des métadonnées FCP (benchmark, frais, risque)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-currency-exchange text-primary me-2"></i>
+                                <span>Suivi historique des valeurs liquidatives</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-file-earmark-arrow-down text-primary me-2"></i>
+                                <span>Import/Export de données (CSV, Excel)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-item">
+                                <i class="bi bi-graph-up text-primary me-2"></i>
+                                <span>Tableaux de bord interactifs Top/Flop</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Développé par</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-primary">CGF Gestion</h4>
+                    <p class="text-muted mb-3">
+                        Société de gestion d'actifs
+                    </p>
+                    <div class="contact-info">
+                        <p class="mb-1">
+                            <i class="bi bi-envelope me-2"></i>
+                            <a href="mailto:contact@cgf-gestion.com">contact@cgf-gestion.com</a>
+                        </p>
+                        <p class="mb-1">
+                            <i class="bi bi-globe me-2"></i>
+                            <a href="https://www.cgf-gestion.com" target="_blank">www.cgf-gestion.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-code-square me-2"></i>Technologies utilisées</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <span class="badge bg-success fs-6 py-2 px-3">
+                            <i class="bi bi-filetype-py me-1"></i>Python / Django
+                        </span>
+                        <span class="badge bg-primary fs-6 py-2 px-3">
+                            <i class="bi bi-bootstrap me-1"></i>Bootstrap 5
+                        </span>
+                        <span class="badge bg-info fs-6 py-2 px-3">
+                            <i class="bi bi-database me-1"></i>SQLite
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

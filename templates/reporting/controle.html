@@ -1,0 +1,891 @@
+{% extends 'base.html' %}
+
+{% block title %}Contrôle - Reporting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        background-color: #fff;
+        border-bottom: 3px solid var(--accent-color);
+    }
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-bottom: 3px solid #dee2e6;
+    }
+    .tab-icon { font-size: 1.1rem; margin-right: 0.5rem; }
+
+    .table-compact th, .table-compact td {
+        padding: 0.45rem 0.55rem;
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+
+    .badge-count {
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .kpi-box {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--shadow-sm);
+    }
+    .kpi-box .kpi-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .kpi-box .kpi-value { color: var(--primary-color); font-size: 1.65rem; font-weight: 700; line-height: 1.1; }
+    .kpi-box .kpi-sub { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.2rem; }
+
+    /* === DASHBOARD ALERTES === */
+    .severity-banner {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .severity-tile {
+        border-radius: var(--border-radius-lg);
+        padding: 1.25rem 1.5rem;
+        color: #fff;
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+    }
+    .severity-tile::after {
+        content: '';
+        position: absolute; right: -20px; top: -20px;
+        width: 120px; height: 120px; border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+    }
+    .severity-tile .severity-count { font-size: 2.4rem; font-weight: 800; line-height: 1; }
+    .severity-tile .severity-label { font-size: 0.9rem; opacity: 0.9; margin-top: 0.25rem; }
+    .severity-tile .severity-sub { font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem; }
+    .severity-tile.critical { background: linear-gradient(135deg, var(--gray-800), var(--gray-900)); }
+    .severity-tile.warning  { background: linear-gradient(135deg, var(--gray-600), var(--gray-700)); }
+    .severity-tile.ok       { background: linear-gradient(135deg, var(--blue-700), var(--blue-900)); }
+    .severity-tile.total    { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+
+    .alert-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 1rem;
+    }
+    .alert-card {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-top: 4px solid var(--gray-400);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+    }
+    .alert-card:hover { box-shadow: var(--shadow-md); }
+    .alert-card.sev-critical { border-top-color: var(--gray-800); }
+    .alert-card.sev-warning  { border-top-color: var(--gray-600); }
+    .alert-card.sev-ok       { border-top-color: var(--blue-700); opacity: 0.85; }
+
+    .alert-card-header {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.1rem 0.75rem;
+        gap: 0.85rem;
+    }
+    .alert-card-icon {
+        flex: 0 0 48px;
+        height: 48px; width: 48px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.45rem;
+    }
+    .sev-critical .alert-card-icon { background: var(--gray-200); color: var(--gray-900); }
+    .sev-warning  .alert-card-icon { background: var(--gray-100); color: var(--gray-700); }
+    .sev-ok       .alert-card-icon { background: var(--blue-100); color: var(--blue-700); }
+
+    .alert-card-title {
+        font-size: 0.98rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.25;
+    }
+    .alert-card-count {
+        margin-left: auto;
+        font-size: 1.55rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .sev-critical .alert-card-count { color: var(--gray-800); }
+    .sev-warning  .alert-card-count { color: var(--gray-600); }
+    .sev-ok       .alert-card-count { color: var(--blue-700); }
+
+    .alert-card-body {
+        padding: 0 1.1rem 0.85rem;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+    }
+    .alert-card-action-hint {
+        display: block;
+        margin-top: 0.5rem;
+        padding: 0.45rem 0.65rem;
+        background: var(--gray-100);
+        border-left: 3px solid var(--primary-color);
+        border-radius: 4px;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+    }
+    .alert-card-footer {
+        padding: 0.65rem 1.1rem;
+        border-top: 1px solid var(--gray-100);
+        display: flex;
+        gap: 0.4rem;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--gray-050);
+        border-bottom-left-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
+    }
+    .alert-card-footer .btn {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    .alert-detail {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+    .alert-detail-header {
+        padding: 0.75rem 1.1rem;
+        background: var(--blue-050);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .btn-row-action {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-shield-check me-2"></i>Contrôle
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header-card">
+                <h4>Contrôle interne &amp; Qualité des données</h4>
+                <p class="text-muted mb-0">
+                    Supervision des données SICAV / Valeurs Liquidatives, suivi des utilisateurs
+                    et des sessions actives.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résumé haut de page -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-box">
+            <div class="kpi-label"><i class="bi bi-receipt me-1"></i>Transactions SICAV</div>
+            <div class="kpi-value">{{ total_transactions }}</div>
+            <div class="kpi-sub">
+                {{ total_souscriptions }} souscription{{ total_souscriptions|pluralize }} ·
+                {{ total_rachats }} rachat{{ total_rachats|pluralize }}
+            </div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label"><i class="bi bi-exclamation-triangle me-1"></i>Alertes de cohérence</div>
+            <div class="kpi-value" style="color: {% if total_alertes > 0 %}var(--danger-color){% else %}var(--primary-color){% endif %};">
+                {{ total_alertes }}
+            </div>
+            <div class="kpi-sub">Anomalies détectées sur les données</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label"><i class="bi bi-people me-1"></i>Utilisateurs</div>
+            <div class="kpi-value">{{ nb_users_actifs }}/{{ nb_users_total }}</div>
+            <div class="kpi-sub">{{ nb_superusers }} administrateur{{ nb_superusers|pluralize }}</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label"><i class="bi bi-broadcast me-1"></i>Sessions actives</div>
+            <div class="kpi-value">{{ nb_sessions_actives }}</div>
+            <div class="kpi-sub">{{ nb_users_connectes_maintenant }} utilisateur{{ nb_users_connectes_maintenant|pluralize }} connecté{{ nb_users_connectes_maintenant|pluralize }}</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="controleTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if vue_active == 'apercu' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-apercu" type="button" role="tab">
+                <i class="bi bi-speedometer2 tab-icon"></i>Aperçu
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if vue_active == 'alertes' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-alertes" type="button" role="tab">
+                <i class="bi bi-exclamation-diamond tab-icon"></i>Alertes
+                <span class="badge bg-danger badge-count">{{ total_alertes }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if vue_active == 'utilisateurs' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-users" type="button" role="tab">
+                <i class="bi bi-people tab-icon"></i>Utilisateurs
+                <span class="badge bg-secondary badge-count">{{ nb_users_total }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if vue_active == 'sessions' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-sessions" type="button" role="tab">
+                <i class="bi bi-broadcast-pin tab-icon"></i>Sessions
+                <span class="badge bg-primary badge-count">{{ nb_sessions_actives }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- =================== ONGLET APERÇU =================== -->
+        <div class="tab-pane fade {% if vue_active == 'apercu' %}show active{% endif %}" id="tab-apercu" role="tabpanel">
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header"><i class="bi bi-calendar-range me-2"></i>Couverture temporelle</div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-7 text-muted">Première transaction</dt>
+                                <dd class="col-5 text-end">{{ premiere_tx|date:"d/m/Y"|default:"-" }}</dd>
+                                <dt class="col-7 text-muted">Dernière transaction</dt>
+                                <dd class="col-5 text-end">{{ derniere_tx|date:"d/m/Y"|default:"-" }}</dd>
+                                <dt class="col-7 text-muted">Dernière VL</dt>
+                                <dd class="col-5 text-end">{{ derniere_vl_date|date:"d/m/Y"|default:"-" }}</dd>
+                                <dt class="col-7 text-muted">Date du contrôle</dt>
+                                <dd class="col-5 text-end">{{ aujourd_hui|date:"d/m/Y" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>Volumétrie</div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-7 text-muted">Plans PER/PEE uniques</dt>
+                                <dd class="col-5 text-end"><strong>{{ total_plans }}</strong></dd>
+                                <dt class="col-7 text-muted">Clients uniques</dt>
+                                <dd class="col-5 text-end"><strong>{{ total_clients }}</strong></dd>
+                                <dt class="col-7 text-muted">FCP référencés</dt>
+                                <dd class="col-5 text-end"><strong>{{ total_fcp_meta }}</strong></dd>
+                                <dt class="col-7 text-muted">Points de VL</dt>
+                                <dd class="col-5 text-end"><strong>{{ total_vl }}</strong></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header"><i class="bi bi-arrow-left-right me-2"></i>Répartition par sens</div>
+                        <div class="card-body">
+                            <table class="table table-sm mb-0 table-compact">
+                                <thead><tr><th>Sens</th><th class="text-end">Nb tx</th><th class="text-end">Quantité</th></tr></thead>
+                                <tbody>
+                                {% for r in repartition_sens %}
+                                    <tr>
+                                        <td>
+                                            {% if r.sens == 'souscription' %}
+                                                <span class="badge bg-primary">Souscription</span>
+                                            {% elif r.sens == 'rachat' %}
+                                                <span class="badge bg-secondary">Rachat</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Non renseigné</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">{{ r.nb }}</td>
+                                        <td class="text-end">{{ r.qte|floatformat:2|default:"-" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="3" class="text-center text-muted">Aucune donnée</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-trophy me-2"></i>Top 10 des FCP par nombre de transactions
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-compact mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:60px;">#</th>
+                                <th>FCP</th>
+                                <th class="text-end" style="width:140px;">Transactions</th>
+                                <th style="width:40%;">Répartition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for f in top_fcp_tx %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td><strong>{{ f.nom_fcp }}</strong></td>
+                                <td class="text-end">{{ f.nb }}</td>
+                                <td>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {% widthratio f.nb top_fcp_tx.0.nb 100 %}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center py-4 text-muted">Aucune transaction enregistrée</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== ONGLET ALERTES =================== -->
+        <div class="tab-pane fade {% if vue_active == 'alertes' %}show active{% endif %}" id="tab-alertes" role="tabpanel">
+
+            <!-- Bandeau de sévérité -->
+            <div class="severity-banner">
+                <div class="severity-tile total">
+                    <div class="severity-count">{{ total_alertes }}</div>
+                    <div class="severity-label"><i class="bi bi-list-check me-1"></i>Anomalies totales</div>
+                    <div class="severity-sub">sur {{ nb_controles_total }} contrôles exécutés</div>
+                </div>
+                <div class="severity-tile critical">
+                    <div class="severity-count">{{ nb_critiques }}</div>
+                    <div class="severity-label"><i class="bi bi-exclamation-octagon-fill me-1"></i>Critiques</div>
+                    <div class="severity-sub">Bloquent les calculs ou la valorisation</div>
+                </div>
+                <div class="severity-tile warning">
+                    <div class="severity-count">{{ nb_warnings }}</div>
+                    <div class="severity-label"><i class="bi bi-exclamation-triangle-fill me-1"></i>À traiter</div>
+                    <div class="severity-sub">Dégradent la qualité du reporting</div>
+                </div>
+                <div class="severity-tile ok">
+                    <div class="severity-count">{{ nb_controles_ok }}</div>
+                    <div class="severity-label"><i class="bi bi-check-circle-fill me-1"></i>Contrôles OK</div>
+                    <div class="severity-sub">Aucune anomalie détectée</div>
+                </div>
+            </div>
+
+            {% if total_alertes == 0 %}
+            <div class="alert alert-success d-flex align-items-center">
+                <i class="bi bi-shield-check fs-3 me-3"></i>
+                <div>
+                    <strong>Données saines.</strong> Tous les contrôles de cohérence SICAV / VL ont été passés avec succès.
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Grille des cartes d'alerte -->
+            <div class="alert-grid">
+                {% for c in cartes_alertes %}
+                <div class="alert-card sev-{% if c.rows %}{{ c.severity }}{% else %}ok{% endif %}">
+                    <div class="alert-card-header">
+                        <div class="alert-card-icon"><i class="bi {{ c.icon }}"></i></div>
+                        <div>
+                            <h6 class="alert-card-title">{{ c.titre }}</h6>
+                            <small class="text-muted">
+                                {% if c.rows %}
+                                    {% if c.severity == 'critical' %}Critique{% else %}Attention{% endif %}
+                                {% else %}Conforme{% endif %}
+                            </small>
+                        </div>
+                        <div class="alert-card-count">{{ c.rows|length }}</div>
+                    </div>
+                    <div class="alert-card-body">
+                        {{ c.description }}
+                        <span class="alert-card-action-hint">
+                            <i class="bi bi-tools me-1"></i><strong>Action :</strong> {{ c.action }}
+                        </span>
+                    </div>
+                    <div class="alert-card-footer">
+                        {% if c.rows %}
+                            <button class="btn btn-sm btn-primary"
+                                    type="button"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#oc-{{ c.id }}">
+                                <i class="bi bi-wrench-adjustable me-1"></i>Corriger ({{ c.rows|length }})
+                            </button>
+                            {% if c.id == 'doublons' %}
+                            <form method="post" action="{% url 'reporting:controle_purger_doublons' %}"
+                                  onsubmit="return confirm('Purger tous les doublons stricts ? Seule la première occurrence de chaque groupe sera conservée.');"
+                                  class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash3 me-1"></i>Purger tout
+                                </button>
+                            </form>
+                            {% elif c.id == 'vl-obsolete' %}
+                            <a href="{% url 'admin:reporting_valeurliquidative_add' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Ajouter VL
+                            </a>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-success small">
+                                <i class="bi bi-check2-circle me-1"></i>Rien à corriger
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Offcanvas de détail (un par carte qui a des rows) -->
+            {% for c in cartes_alertes %}
+            {% if c.rows %}
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="oc-{{ c.id }}" style="width: min(900px, 95vw);">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title">
+                        <i class="bi {{ c.icon }} me-2
+                            {% if c.severity == 'critical' %}text-danger{% else %}text-warning{% endif %}"></i>
+                        {{ c.titre }}
+                        <span class="badge bg-{% if c.severity == 'critical' %}danger{% else %}warning text-dark{% endif %} ms-2">
+                            {{ c.rows|length }}
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    <div class="p-3 border-bottom bg-light">
+                        <p class="mb-2 small text-muted">{{ c.description }}</p>
+                        <div class="alert alert-primary mb-0 py-2 small">
+                            <i class="bi bi-tools me-1"></i><strong>Action recommandée :</strong> {{ c.action }}
+                        </div>
+                    </div>
+
+                    {# --- Rendu selon le type --- #}
+                    {% if c.kind == 'sicav_tx' %}
+                        {% include 'reporting/_controle_tx_table.html' with rows=c.rows empty_msg="" %}
+                    {% elif c.kind == 'sicav_tx_novl' %}
+                        {# Chaque row est un dict {tx, cmp_actuel, vl_avant, vl_apres} #}
+                        <div class="alert alert-info py-2 px-3 mx-3 mt-3 mb-0 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Ces transactions n'ont <strong>aucune VL disponible à leur date ou avant</strong>
+                            (c'est la condition de déclenchement de l'alerte).
+                            La colonne <em>VL de référence</em> indique la VL la plus proche disponible
+                            parmi toutes les VL du FCP. Cliquez
+                            <i class="bi bi-calculator"></i> pour corriger le CMP avec cette valeur.
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-compact align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date tx</th>
+                                        <th>N° Compte / Client</th>
+                                        <th>FCP</th>
+                                        <th class="text-end">CMP actuel</th>
+                                        <th>VL de référence</th>
+                                        <th class="text-end" style="width: 190px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for row in c.rows %}
+                                {% with t=row.tx va=row.vl_avant vap=row.vl_apres %}
+                                <tr>
+                                    <td>{{ t.date_transaction|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <code>{{ t.numero_compte|default:"-" }}</code>
+                                        {% if t.nom_prenom %}<br><small class="text-muted">{{ t.nom_prenom }}</small>{% endif %}
+                                    </td>
+                                    <td><small>{{ t.nom_fcp }}</small></td>
+
+                                    {# CMP actuel #}
+                                    <td class="text-end">
+                                        {% if row.cmp_actuel %}
+                                            <span class="fw-bold">{{ row.cmp_actuel|floatformat:4 }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">0 / vide</span>
+                                        {% endif %}
+                                    </td>
+
+                                    {# VL de référence : avant si dispo, sinon après #}
+                                    <td>
+                                        {% if va %}
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle" style="font-size:.7rem;">
+                                                    <i class="bi bi-arrow-left"></i> avant
+                                                </span>
+                                                <strong class="small">{{ va.valeur|floatformat:4 }}</strong>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ va.date|date:"d/m/Y" }} <span class="badge bg-secondary">-{{ va.ecart }}j</span></span>
+                                            </div>
+                                            {% if vap %}
+                                            <div class="d-flex align-items-center gap-1 flex-wrap mt-1">
+                                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size:.7rem;">
+                                                    <i class="bi bi-arrow-right"></i> après
+                                                </span>
+                                                <strong class="small">{{ vap.valeur|floatformat:4 }}</strong>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ vap.date|date:"d/m/Y" }} <span class="badge bg-secondary">+{{ vap.ecart }}j</span></span>
+                                            </div>
+                                            {% endif %}
+                                        {% elif vap %}
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size:.7rem;">
+                                                    <i class="bi bi-arrow-right"></i> après
+                                                </span>
+                                                <strong class="small">{{ vap.valeur|floatformat:4 }}</strong>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ vap.date|date:"d/m/Y" }} <span class="badge bg-secondary">+{{ vap.ecart }}j</span></span>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-danger small"><i class="bi bi-x-circle me-1"></i>Aucune VL</span>
+                                        {% endif %}
+                                    </td>
+
+                                    {# Actions : Corriger CMP + Éditer + Supprimer #}
+                                    <td class="text-end">
+                                        <div class="d-flex align-items-center justify-content-end gap-1 flex-wrap">
+
+                                            {# Bouton CMP : direction auto-sélectionnée #}
+                                            {% if va or vap %}
+                                            <form method="post"
+                                                  action="{% url 'reporting:controle_appliquer_vl_proche' t.pk %}"
+                                                  class="d-inline m-0">
+                                                {% csrf_token %}
+                                                {% if va and vap %}
+                                                    {# Les deux disponibles : sélecteur #}
+                                                    <div class="btn-group btn-group-sm me-1" role="group">
+                                                        <input type="radio" class="btn-check" name="direction" id="d-av-{{ t.pk }}" value="avant" checked>
+                                                        <label class="btn btn-outline-secondary" for="d-av-{{ t.pk }}" title="VL du {{ va.date|date:'d/m/Y' }} (-{{ va.ecart }}j)">
+                                                            <i class="bi bi-arrow-left"></i>
+                                                        </label>
+                                                        <input type="radio" class="btn-check" name="direction" id="d-ap-{{ t.pk }}" value="apres">
+                                                        <label class="btn btn-outline-secondary" for="d-ap-{{ t.pk }}" title="VL du {{ vap.date|date:'d/m/Y' }} (+{{ vap.ecart }}j)">
+                                                            <i class="bi bi-arrow-right"></i>
+                                                        </label>
+                                                    </div>
+                                                {% elif va %}
+                                                    <input type="hidden" name="direction" value="avant">
+                                                {% else %}
+                                                    <input type="hidden" name="direction" value="apres">
+                                                {% endif %}
+                                                <button type="submit" class="btn btn-sm btn-primary btn-row-action"
+                                                        title="Corriger le CMP avec cette VL">
+                                                    <i class="bi bi-calculator"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+
+                                            {# Éditer dans l'admin #}
+                                            <a href="{% url 'admin:reporting_sicav_change' t.pk %}"
+                                               class="btn btn-sm btn-outline-primary btn-row-action"
+                                               target="_blank" rel="noopener" title="Éditer dans l'admin">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+
+                                            {# Supprimer #}
+                                            <form method="post"
+                                                  action="{% url 'reporting:controle_supprimer_sicav' t.pk %}"
+                                                  onsubmit="return confirm('Supprimer définitivement la transaction SICAV #{{ t.pk }} ?');"
+                                                  class="d-inline m-0">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-row-action" title="Supprimer">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-2 border-top bg-light small text-muted">
+                            <i class="bi bi-calculator me-1"></i>Corriger le CMP avec la VL de référence &nbsp;·&nbsp;
+                            <i class="bi bi-pencil-square ms-1 me-1"></i>Éditer dans l'admin &nbsp;·&nbsp;
+                            <i class="bi bi-trash3 ms-1 me-1"></i>Supprimer la transaction
+                        </div>
+                    {% elif c.kind == 'fcp_vl' %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-compact mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>FCP</th>
+                                        <th>Dernière VL</th>
+                                        <th class="text-end">Ancienneté</th>
+                                        <th class="text-end" style="width: 170px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for f in c.rows %}
+                                    <tr>
+                                        <td><strong>{{ f.nom_fcp }}</strong></td>
+                                        <td>{{ f.derniere_date|date:"d/m/Y" }}</td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning text-dark">{{ f.anciennete }} j</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'admin:reporting_valeurliquidative_add' %}"
+                                               class="btn btn-sm btn-outline-primary btn-row-action"
+                                               target="_blank" rel="noopener">
+                                                <i class="bi bi-plus-circle me-1"></i>Ajouter VL
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% elif c.kind == 'position' %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-compact mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>N° Compte</th>
+                                        <th>Client</th>
+                                        <th>FCP</th>
+                                        <th class="text-end">Solde (parts)</th>
+                                        <th class="text-end" style="width: 180px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in c.rows %}
+                                    <tr>
+                                        <td><code>{{ p.numero_compte }}</code></td>
+                                        <td>{{ p.nom_prenom|default:"-" }}</td>
+                                        <td>{{ p.nom_fcp }}</td>
+                                        <td class="text-end text-danger fw-bold">{{ p.solde|floatformat:4 }}</td>
+                                        <td class="text-end">
+                                            <a href="{% url 'admin:reporting_sicav_changelist' %}?q={{ p.numero_compte }}"
+                                               class="btn btn-sm btn-outline-primary btn-row-action"
+                                               target="_blank" rel="noopener"
+                                               title="Voir les transactions de ce client">
+                                                <i class="bi bi-search me-1"></i>Transactions
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% elif c.kind == 'doublon' %}
+                        <div class="p-3 border-bottom">
+                            <form method="post" action="{% url 'reporting:controle_purger_doublons' %}"
+                                  onsubmit="return confirm('Purger tous les doublons stricts ? Seule la première occurrence de chaque groupe sera conservée.');"
+                                  class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash3 me-1"></i>Purger tous les doublons
+                                </button>
+                                <small class="text-muted ms-2">Garde la première occurrence par groupe.</small>
+                            </form>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-compact mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>N° Compte</th>
+                                        <th>FCP</th>
+                                        <th>Sens</th>
+                                        <th class="text-end">Quantité</th>
+                                        <th class="text-end">Occurrences</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for d in c.rows %}
+                                    <tr>
+                                        <td>{{ d.date_transaction|date:"d/m/Y" }}</td>
+                                        <td><code>{{ d.numero_compte }}</code></td>
+                                        <td>{{ d.nom_fcp }}</td>
+                                        <td>
+                                            {% if d.sens == 'souscription' %}
+                                                <span class="badge bg-primary">Souscription</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Rachat</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">{{ d.quantite|floatformat:4 }}</td>
+                                        <td class="text-end"><span class="badge bg-danger">×{{ d.nb }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+        </div>
+
+        <!-- =================== ONGLET UTILISATEURS =================== -->
+        <div class="tab-pane fade {% if vue_active == 'utilisateurs' %}show active{% endif %}" id="tab-users" role="tabpanel">
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="kpi-box">
+                        <div class="kpi-label"><i class="bi bi-people me-1"></i>Total utilisateurs</div>
+                        <div class="kpi-value">{{ nb_users_total }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-box">
+                        <div class="kpi-label"><i class="bi bi-person-check me-1"></i>Actifs</div>
+                        <div class="kpi-value">{{ nb_users_actifs }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-box">
+                        <div class="kpi-label"><i class="bi bi-shield-lock me-1"></i>Administrateurs</div>
+                        <div class="kpi-value">{{ nb_superusers }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-box">
+                        <div class="kpi-label"><i class="bi bi-calendar-check me-1"></i>Connectés (30 j)</div>
+                        <div class="kpi-value">{{ nb_users_connectes_30j }}</div>
+                        <div class="kpi-sub">{{ nb_users_jamais }} n'ont jamais été connectés</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-list-ul me-2"></i>Liste des utilisateurs
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="bi bi-person me-1"></i>Nom d'utilisateur</th>
+                                <th>Nom complet</th>
+                                <th>Email</th>
+                                <th class="text-center">Rôle</th>
+                                <th class="text-center">Statut</th>
+                                <th>Inscription</th>
+                                <th>Dernière connexion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for u in utilisateurs %}
+                            <tr>
+                                <td><strong>{{ u.username }}</strong></td>
+                                <td>{{ u.get_full_name|default:"-" }}</td>
+                                <td>
+                                    {% if u.email %}
+                                        <a href="mailto:{{ u.email }}" class="text-decoration-none">{{ u.email }}</a>
+                                    {% else %}<span class="text-muted">-</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if u.is_superuser %}
+                                        <span class="badge bg-primary"><i class="bi bi-shield-lock me-1"></i>Admin</span>
+                                    {% elif u.is_staff %}
+                                        <span class="badge bg-info">Staff</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Consultation</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if u.is_active %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ u.date_joined|date:"d/m/Y H:i" }}</small></td>
+                                <td>
+                                    {% if u.last_login %}
+                                        <small>{{ u.last_login|date:"d/m/Y H:i" }}</small>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Jamais</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Aucun utilisateur.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== ONGLET SESSIONS =================== -->
+        <div class="tab-pane fade {% if vue_active == 'sessions' %}show active{% endif %}" id="tab-sessions" role="tabpanel">
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Les sessions listées ci-dessous sont les sessions Django encore valides (non expirées).
+                Une session anonyme (sans utilisateur) correspond généralement à un visiteur non authentifié.
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-broadcast me-2"></i>Sessions actives</span>
+                    <span class="badge bg-primary">{{ nb_sessions_actives }} session{{ nb_sessions_actives|pluralize }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Rôle</th>
+                                <th>Clé de session</th>
+                                <th>Expire le</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for s in sessions_actives %}
+                            <tr>
+                                <td>
+                                    {% if s.user %}
+                                        <i class="bi bi-person-circle me-1 text-primary"></i>
+                                        <strong>{{ s.user.username }}</strong>
+                                        {% if s.user.get_full_name %}
+                                            <br><small class="text-muted">{{ s.user.get_full_name }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted"><i class="bi bi-incognito me-1"></i>Anonyme</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if s.user.is_superuser %}
+                                        <span class="badge bg-primary">Admin</span>
+                                    {% elif s.user %}
+                                        <span class="badge bg-secondary">Consultation</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">—</span>
+                                    {% endif %}
+                                </td>
+                                <td><code class="small">{{ s.session_key|slice:":16" }}…</code></td>
+                                <td><small>{{ s.expire_date|date:"d/m/Y H:i" }}</small></td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-moon" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 mb-0">Aucune session active actuellement.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

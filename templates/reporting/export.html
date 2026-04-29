@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Exportation - Reporting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        background-color: #fff;
+        border-bottom: 3px solid var(--accent-color);
+    }
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-bottom: 3px solid #dee2e6;
+    }
+    .tab-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+    .export-card {
+        background: #fff;
+        border: 1px solid rgba(10, 35, 66, 0.08);
+        border-radius: var(--border-radius-lg, 12px);
+        box-shadow: var(--shadow-sm);
+        padding: 1.75rem;
+        height: 100%;
+    }
+    .export-card h5 {
+        color: var(--primary-color);
+        font-weight: 700;
+        margin-bottom: .25rem;
+    }
+    .export-card .lead-muted {
+        color: var(--text-muted);
+        font-size: .9rem;
+        margin-bottom: 1.25rem;
+    }
+    .export-card .form-label {
+        font-weight: 600;
+        color: var(--primary-color);
+        font-size: .85rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .export-card select[multiple] {
+        min-height: 280px;
+        font-family: Cambria, Georgia, serif;
+    }
+    .export-card .selection-info {
+        font-size: .85rem;
+        color: var(--text-muted);
+        margin-top: .35rem;
+    }
+    .export-card .selection-info strong {
+        color: var(--primary-color);
+    }
+    .filter-input {
+        margin-bottom: .5rem;
+    }
+    .btn-toolbar-export {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Exportation
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header-card">
+                <h4>Exporter un rapport</h4>
+                <p class="text-muted mb-0">
+                    Générez un rapport conforme à la charte graphique CGF, au format A4 portrait,
+                    pour un ou plusieurs plans, ou un ou plusieurs clients.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglets -->
+    <ul class="nav nav-tabs mb-4" id="exportTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pdf-tab" data-bs-toggle="tab"
+                    data-bs-target="#pdf" type="button" role="tab"
+                    aria-controls="pdf" aria-selected="true">
+                <i class="bi bi-file-earmark-pdf-fill tab-icon"></i>PDF
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="exportTabsContent">
+
+        <!-- Onglet PDF -->
+        <div class="tab-pane fade show active" id="pdf" role="tabpanel" aria-labelledby="pdf-tab">
+
+            <!-- Période commune -->
+            <div class="export-card mb-4">
+                <h5><i class="bi bi-calendar3 me-2"></i>Période d'analyse</h5>
+                <p class="lead-muted">Cette période s'applique aux deux types de rapports ci-dessous.</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="date_debut" class="form-label">Date de début</label>
+                        <input type="date" id="date_debut" class="form-control"
+                               value="{{ date_debut_defaut }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="date_fin" class="form-label">Date de fin</label>
+                        <input type="date" id="date_fin" class="form-control"
+                               value="{{ date_fin_defaut }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- Rapport plans -->
+                <div class="col-lg-6">
+                    <div class="export-card">
+                        <h5><i class="bi bi-bar-chart-fill me-2"></i>Rapport par plan(s)</h5>
+                        <p class="lead-muted">
+                            Sélectionnez un ou plusieurs plans pour générer un rapport
+                            consolidé : valeur, performance et clients du plan.
+                        </p>
+
+                        <form id="form-plans" method="get" action="{% url 'reporting:export_rapport_plans_pdf' %}">
+                            <input type="hidden" name="date_debut" id="hidden_date_debut_plans">
+                            <input type="hidden" name="date_fin" id="hidden_date_fin_plans">
+
+                            <label for="filtre_plans" class="form-label">Plans disponibles ({{ plans|length }})</label>
+                            <input type="text" id="filtre_plans" class="form-control filter-input"
+                                   placeholder="Filtrer par nom...">
+
+                            <select name="plans" id="select_plans" class="form-select" multiple size="12">
+                                {% for p in plans %}
+                                <option value="{{ p.nom_per_pee }}">
+                                    {{ p.nom_per_pee }} ({{ p.nb_clients }} client{{ p.nb_clients|pluralize }})
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <div class="selection-info">
+                                <strong id="count_plans">0</strong> plan(s) sélectionné(s)
+                                · Maintenez <kbd>Ctrl</kbd> (ou <kbd>Cmd</kbd>) pour sélection multiple.
+                            </div>
+
+                            <div class="btn-toolbar-export">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="select_all_plans">
+                                    <i class="bi bi-check2-square me-1"></i>Tout sélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear_plans">
+                                    <i class="bi bi-x-square me-1"></i>Effacer
+                                </button>
+                                <button type="submit" class="btn btn-primary ms-auto" id="submit_plans" disabled>
+                                    <i class="bi bi-download me-1"></i>Télécharger PDF
+                                </button>
+                                <button type="submit" class="btn btn-outline-primary" id="preview_plans"
+                                        formaction="{% url 'reporting:export_rapport_plans' %}" formtarget="_blank" disabled>
+                                    <i class="bi bi-eye me-1"></i>Aperçu HTML
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Rapport clients -->
+                <div class="col-lg-6">
+                    <div class="export-card">
+                        <h5><i class="bi bi-person-fill me-2"></i>Rapport par client(s)</h5>
+                        <p class="lead-muted">
+                            Sélectionnez un ou plusieurs clients pour générer un rapport
+                            individuel détaillé : positions, performance et mouvements.
+                        </p>
+
+                        <form id="form-clients" method="get" action="{% url 'reporting:export_rapport_clients_pdf' %}">
+                            <input type="hidden" name="date_debut" id="hidden_date_debut_clients">
+                            <input type="hidden" name="date_fin" id="hidden_date_fin_clients">
+
+                            <label for="filtre_clients" class="form-label">Clients disponibles ({{ clients|length }})</label>
+                            <input type="text" id="filtre_clients" class="form-control filter-input"
+                                   placeholder="Filtrer par nom, n° de compte ou plan...">
+
+                            <select name="comptes" id="select_clients" class="form-select" multiple size="12">
+                                {% for c in clients %}
+                                <option value="{{ c.numero_compte }}"
+                                        data-search="{{ c.nom_prenom|default:'' }} {{ c.numero_compte }} {{ c.nom_per_pee|default:'' }}">
+                                    {{ c.nom_prenom|default:"(Sans nom)" }} — {{ c.numero_compte }}{% if c.nom_per_pee %} · {{ c.nom_per_pee }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <div class="selection-info">
+                                <strong id="count_clients">0</strong> client(s) sélectionné(s)
+                                · Maintenez <kbd>Ctrl</kbd> (ou <kbd>Cmd</kbd>) pour sélection multiple.
+                            </div>
+
+                            <div class="btn-toolbar-export">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="select_all_clients">
+                                    <i class="bi bi-check2-square me-1"></i>Tout sélectionner
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear_clients">
+                                    <i class="bi bi-x-square me-1"></i>Effacer
+                                </button>
+                                <button type="submit" class="btn btn-primary ms-auto" id="submit_clients" disabled>
+                                    <i class="bi bi-download me-1"></i>Télécharger PDF
+                                </button>
+                                <button type="submit" class="btn btn-outline-primary" id="preview_clients"
+                                        formaction="{% url 'reporting:export_rapport_clients' %}" formtarget="_blank" disabled>
+                                    <i class="bi bi-eye me-1"></i>Aperçu HTML
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-info-circle me-2"></i>
+                Le bouton <strong>Télécharger PDF</strong> génère directement un fichier PDF A4 portrait.
+                Le bouton <strong>Aperçu HTML</strong> reste disponible pour visualiser le rapport dans un nouvel onglet.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const dateDebut = document.getElementById('date_debut');
+    const dateFin = document.getElementById('date_fin');
+
+    function syncDates() {
+        document.getElementById('hidden_date_debut_plans').value = dateDebut.value;
+        document.getElementById('hidden_date_fin_plans').value = dateFin.value;
+        document.getElementById('hidden_date_debut_clients').value = dateDebut.value;
+        document.getElementById('hidden_date_fin_clients').value = dateFin.value;
+    }
+    dateDebut.addEventListener('change', syncDates);
+    dateFin.addEventListener('change', syncDates);
+    syncDates();
+
+    function setupSelect(prefix) {
+        const select = document.getElementById('select_' + prefix);
+        const filter = document.getElementById('filtre_' + prefix);
+        const count = document.getElementById('count_' + prefix);
+        const submit = document.getElementById('submit_' + prefix);
+        const preview = document.getElementById('preview_' + prefix);
+        const btnAll = document.getElementById('select_all_' + prefix);
+        const btnClear = document.getElementById('clear_' + prefix);
+
+        function refresh() {
+            const n = Array.from(select.selectedOptions).length;
+            count.textContent = n;
+            submit.disabled = n === 0;
+            if (preview) preview.disabled = n === 0;
+        }
+
+        select.addEventListener('change', refresh);
+
+        filter.addEventListener('input', () => {
+            const q = filter.value.toLowerCase().trim();
+            for (const opt of select.options) {
+                const haystack = (opt.dataset.search || opt.textContent).toLowerCase();
+                opt.hidden = q && !haystack.includes(q);
+            }
+        });
+
+        btnAll.addEventListener('click', () => {
+            for (const opt of select.options) {
+                if (!opt.hidden) opt.selected = true;
+            }
+            refresh();
+        });
+
+        btnClear.addEventListener('click', () => {
+            for (const opt of select.options) opt.selected = false;
+            refresh();
+        });
+
+        refresh();
+    }
+
+    setupSelect('plans');
+    setupSelect('clients');
+})();
+</script>
+{% endblock %}

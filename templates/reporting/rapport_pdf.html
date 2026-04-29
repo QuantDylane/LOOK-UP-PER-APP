@@ -1,0 +1,406 @@
+{% load humanize %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>CGF Gestion — Reporting PER/PEE</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: Cambria, Georgia, "Times New Roman", serif;
+    font-size: 15px;
+    color: #2B3636;
+    background: #E2E6E6;
+    padding: 32px 0;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #ffffff;
+    padding: 28mm 24mm 20mm;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,76,144,.12);
+    page-break-after: always;
+    margin: 0 auto 24px;
+  }
+  .page:last-child { page-break-after: auto; margin-bottom: 0; }
+
+  /* ── Header ────────────────────────────────────────── */
+  .header { width: 100%; margin-bottom: 6px; }
+  .header td { vertical-align: top; }
+  .header td.right { text-align: right; font-size: 12px; color: #5D6E6E; line-height: 1.5; }
+  .header td.right strong { font-size: 13px; color: #2B3636; font-weight: 600; }
+  .logo-mark {
+    display: inline-block;
+    width: 44px; height: 44px;
+    background: #004C90;
+    border-radius: 6px;
+    color: #ffffff; font-weight: 700; font-size: 16px;
+    text-align: center; line-height: 44px;
+    vertical-align: middle;
+    margin-right: 12px;
+  }
+  .logo-text {
+    display: inline-block;
+    font-size: 18px; font-weight: 700; color: #004C90;
+    vertical-align: middle;
+  }
+  .header-rule {
+    height: 2px;
+    background: #004C90;
+    margin-bottom: 20px;
+  }
+
+  /* ── Section titles ────────────────────────────────── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #004C90;
+    background: #F2F7FB;
+    border-left: 3px solid #004C90;
+    padding: 7px 12px;
+    margin-bottom: 10px;
+  }
+
+  /* ── Top row (chart + fiche) ───────────────────────── */
+  .top-row { width: 100%; margin-bottom: 16px; }
+  .top-row td { vertical-align: top; }
+  .top-row td.left { width: 58%; padding-right: 8px; }
+  .top-row td.right { width: 42%; padding-left: 8px; }
+
+  .chart-box { border: 1px solid #E2E6E6; border-radius: 8px; padding: 14px 16px 10px; }
+  .chart-area { min-height: 130px; }
+  .chart-area img { width: 100%; height: auto; display: block; }
+  .chart-empty { font-size: 11px; color: #5D6E6E; text-align: center; padding: 32px 0; }
+  .chart-legend { margin-top: 8px; font-size: 10px; color: #5D6E6E; }
+  .chart-legend .swatch {
+    display: inline-block; width: 10px; height: 3px;
+    margin-right: 5px; vertical-align: middle;
+  }
+  .chart-legend .swatch-portfolio { background: #004C90; }
+  .chart-legend .swatch-base { background: #C7CECE; }
+
+  .fiche { border: 1px solid #E2E6E6; border-radius: 8px; padding: 8px 14px; }
+  .fiche table { width: 100%; border-collapse: collapse; }
+  .fiche td {
+    padding: 6px 0;
+    border-bottom: 1px solid #F3F5F5;
+    font-size: 13px;
+  }
+  .fiche tr:last-child td { border-bottom: none; }
+  .fiche td.label { color: #5D6E6E; font-size: 12px; }
+  .fiche td.value { font-weight: 600; text-align: right; }
+
+  /* ── KPI cards ─────────────────────────────────────── */
+  .kpi-row { width: 100%; margin-bottom: 16px; }
+  .kpi-row td { vertical-align: middle; width: 50%; }
+  .kpi-row td.left { padding-right: 8px; }
+  .kpi-row td.right { padding-left: 8px; }
+  .kpi-card {
+    border: 1px solid #E2E6E6; border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .kpi-card table { width: 100%; }
+  .kpi-card td { vertical-align: middle; }
+  .kpi-card-label {
+    font-size: 12px; color: #5D6E6E; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .kpi-card-sublabel {
+    font-size: 11px; color: #5D6E6E; margin-top: 2px;
+    font-weight: 400;
+  }
+  .kpi-card-value {
+    font-size: 22px; font-weight: 700; color: #004C90;
+    text-align: right;
+  }
+  .kpi-card-value.perf-pos { color: #198754; font-size: 19px; }
+  .kpi-card-value.perf-neg { color: #DC3545; font-size: 19px; }
+  .kpi-card-value.perf-neu { color: #5D6E6E; font-size: 19px; }
+
+  /* ── Tables ────────────────────────────────────────── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; }
+  .data-table thead th {
+    text-align: left; padding: 7px 8px;
+    font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: #ffffff; background: #004C90;
+  }
+  .data-table tbody td { padding: 6px 8px; border-bottom: 1px solid #F3F5F5; }
+  .data-table tbody tr.alt td { background: #FAFBFB; }
+  .data-table .num { text-align: right; }
+  .data-table .pos { color: #198754; font-weight: 600; }
+  .data-table .neg { color: #DC3545; font-weight: 600; }
+  .data-table .neu { color: #5D6E6E; }
+  .data-table tfoot td {
+    padding: 7px 8px; font-weight: 700;
+    background: #F2F7FB; border-top: 2px solid #004C90;
+  }
+  .data-table .empty-row td {
+    text-align: center; color: #5D6E6E; font-style: italic; padding: 14px 8px;
+  }
+
+  /* ── Footer ────────────────────────────────────────── */
+  .footer {
+    position: absolute; bottom: 16mm; left: 24mm; right: 24mm;
+    font-size: 10px; color: #5D6E6E;
+    border-top: 1px solid #E2E6E6; padding-top: 8px;
+  }
+  .footer table { width: 100%; }
+  .footer td.right { text-align: right; }
+
+  @media print {
+    html, body { background: #ffffff; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+{% for r in rapports %}
+<div class="page">
+
+  <!-- ═══ EN-TÊTE ═══ -->
+  <table class="header">
+    <tr>
+      <td>
+        <span class="logo-mark">CGF</span>
+        <span class="logo-text">CGF Gestion</span>
+      </td>
+      <td class="right">
+        <strong>Reporting {% if r.kind == 'client' %}Client{% else %}Plan{% endif %} — PER / PEE</strong><br>
+        Période : {{ r.date_debut|date:"d/m/Y" }} → {{ r.date_fin|date:"d/m/Y" }}<br>
+        Édition : {{ date_generation|date:"d/m/Y" }} à {{ date_generation|date:"H\hi" }}
+      </td>
+    </tr>
+  </table>
+  <div class="header-rule"></div>
+
+  <!-- Row 1: Chart + Fiche signalétique -->
+  <table class="top-row">
+    <tr>
+      <td class="left">
+        <div class="chart-box">
+          <div class="section-title">Évolution de la performance (base 100)</div>
+          <div class="chart-area">
+            {% if r.perf_chart_png %}
+              <img src="{{ r.perf_chart_png }}" alt="Courbe de performance">
+            {% else %}
+              <div class="chart-empty">Données insuffisantes pour tracer la courbe de performance.</div>
+            {% endif %}
+          </div>
+          <div class="chart-legend">
+            <span class="swatch swatch-portfolio"></span>Portefeuille
+            &nbsp;&nbsp;
+            <span class="swatch swatch-base"></span>Base 100
+          </div>
+        </div>
+      </td>
+      <td class="right">
+        <div class="section-title">Fiche signalétique</div>
+        <div class="fiche">
+          <table>
+            {% if r.kind == 'client' %}
+              <tr><td class="label">Nom &amp; prénom</td><td class="value">{{ r.client.nom_prenom|default:"—" }}</td></tr>
+              <tr><td class="label">N° de compte</td><td class="value">{{ r.client.numero_compte }}</td></tr>
+              <tr><td class="label">Plan</td><td class="value">{{ r.client.nom_per_pee|default:"—" }}</td></tr>
+              <tr><td class="label">Type de plan</td><td class="value">{{ r.client.type_plan|default:"—" }}</td></tr>
+              <tr><td class="label">Date d'adhésion</td><td class="value">{% if r.client.date_adhesion %}{{ r.client.date_adhesion|date:"d/m/Y" }}{% else %}—{% endif %}</td></tr>
+              <tr><td class="label">Email</td><td class="value">{{ r.client.email|default:"—" }}</td></tr>
+            {% else %}
+              <tr><td class="label">Nom du plan</td><td class="value">{{ r.titre }}</td></tr>
+              <tr><td class="label">Type de plan</td><td class="value">{{ r.sous_titre|default:"—" }}</td></tr>
+              <tr><td class="label">Date d'ouverture</td><td class="value">{% if r.date_ouverture %}{{ r.date_ouverture|date:"d/m/Y" }}{% else %}—{% endif %}</td></tr>
+              <tr><td class="label">Nombre de clients</td><td class="value">{{ r.nb_clients }}</td></tr>
+              <tr><td class="label">Nombre de FCP</td><td class="value">{{ r.fcp_details|length }}</td></tr>
+              <tr><td class="label">Coût total investi</td><td class="value">{{ r.cout_total|floatformat:0|intcomma }} F</td></tr>
+            {% endif %}
+          </table>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Row 2: KPI cards -->
+  <table class="kpi-row">
+    <tr>
+      <td class="left">
+        <div class="kpi-card">
+          <table>
+            <tr>
+              <td>
+                <div class="kpi-card-label">Valorisation</div>
+                <div class="kpi-card-sublabel">au {{ r.date_fin|date:"d/m/Y" }}</div>
+              </td>
+              <td class="kpi-card-value">{{ r.valeur_totale|floatformat:0|intcomma }} F</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+      <td class="right">
+        <div class="kpi-card">
+          <table>
+            <tr>
+              <td>
+                <div class="kpi-card-label" style="font-size: 13px">Performance Dietz modifiée</div>
+                <div class="kpi-card-sublabel">{{ r.date_debut|date:"d/m/Y" }} → {{ r.date_fin|date:"d/m/Y" }}</div>
+              </td>
+              {% if r.perf_modifiee is not None %}
+                <td class="kpi-card-value {% if r.perf_modifiee > 0 %}perf-pos{% elif r.perf_modifiee < 0 %}perf-neg{% else %}perf-neu{% endif %}">
+                  {% if r.perf_modifiee > 0 %}+{% endif %}{{ r.perf_modifiee|floatformat:2 }} %
+                </td>
+              {% else %}
+                <td class="kpi-card-value perf-neu">N/A</td>
+              {% endif %}
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Row 3: Composition du portefeuille -->
+  <div class="section-title">Composition du portefeuille par FCP</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>FCP</th>
+        <th class="num">Parts</th>
+        <th class="num">VL</th>
+        <th class="num">CMP</th>
+        <th class="num">Valeur</th>
+        <th class="num">+/− Value</th>
+        <th class="num">Perf.</th>
+        <th class="num">% Pf</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in r.fcp_details %}
+      <tr {% if forloop.counter|divisibleby:2 %}class="alt"{% endif %}>
+        <td>{{ f.nom_fcp }}</td>
+        <td class="num">{{ f.quantite|floatformat:3|intcomma }}</td>
+        <td class="num">{{ f.vl_actuelle|floatformat:2|intcomma }}</td>
+        <td class="num">{{ f.cmp|floatformat:2|intcomma }}</td>
+        <td class="num">{{ f.valeur|floatformat:0|intcomma }} F</td>
+        <td class="num {% if f.plus_value > 0 %}pos{% elif f.plus_value < 0 %}neg{% else %}neu{% endif %}">
+          {% if f.plus_value > 0 %}+{% endif %}{{ f.plus_value|floatformat:0|intcomma }} F
+        </td>
+        <td class="num {% if f.perf_pct > 0 %}pos{% elif f.perf_pct < 0 %}neg{% else %}neu{% endif %}">
+          {% if f.perf_pct > 0 %}+{% endif %}{{ f.perf_pct|floatformat:2 }} %
+        </td>
+        <td class="num">{{ f.pct_portefeuille|floatformat:1 }} %</td>
+      </tr>
+      {% empty %}
+      <tr class="empty-row"><td colspan="8">Aucune position au {{ r.date_fin|date:"d/m/Y" }}.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if r.fcp_details %}
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num">{{ r.valeur_totale|floatformat:0|intcomma }} F</td>
+        <td class="num {% if r.plus_value > 0 %}pos{% elif r.plus_value < 0 %}neg{% else %}neu{% endif %}">
+          {% if r.plus_value > 0 %}+{% endif %}{{ r.plus_value|floatformat:0|intcomma }} F
+        </td>
+        <td class="num {% if r.perf_pct_globale > 0 %}pos{% elif r.perf_pct_globale < 0 %}neg{% else %}neu{% endif %}">
+          {% if r.perf_pct_globale > 0 %}+{% endif %}{{ r.perf_pct_globale|floatformat:2 }} %
+        </td>
+        <td class="num">100 %</td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+
+  {% if r.kind == 'client' %}
+  <!-- Row 4: Mouvements (client) -->
+  <div class="section-title">Mouvements sur la période</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Sens</th>
+        <th>FCP</th>
+        <th class="num">Quantité</th>
+        <th class="num">VL</th>
+        <th class="num">Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in r.mouvements %}
+      <tr {% if forloop.counter|divisibleby:2 %}class="alt"{% endif %}>
+        <td>{{ m.date|date:"d/m/Y" }}</td>
+        <td>{{ m.sens|capfirst }}</td>
+        <td>{{ m.nom_fcp }}</td>
+        <td class="num">{{ m.quantite|floatformat:3|intcomma }}</td>
+        <td class="num">{{ m.vl|floatformat:2|intcomma }}</td>
+        <td class="num">{{ m.montant|floatformat:0|intcomma }} F</td>
+      </tr>
+      {% empty %}
+      <tr class="empty-row"><td colspan="6">Aucun mouvement enregistré sur la période.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <!-- Row 4: Clients du plan -->
+  <div class="section-title">Clients du plan</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>N° Compte</th>
+        <th>Nom &amp; prénom</th>
+        <th class="num">Valorisation</th>
+        <th class="num">Perf. Dietz simple</th>
+        <th class="num">Perf. Dietz modifiée</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in r.clients %}
+      <tr {% if forloop.counter|divisibleby:2 %}class="alt"{% endif %}>
+        <td>{{ c.numero_compte }}</td>
+        <td>{{ c.nom_prenom|default:"(Sans nom)" }}</td>
+        <td class="num">{{ c.valeur|floatformat:0|intcomma }} F</td>
+        <td class="num {% if c.perf_simple > 0 %}pos{% elif c.perf_simple < 0 %}neg{% else %}neu{% endif %}">
+          {% if c.perf_simple is not None %}{% if c.perf_simple > 0 %}+{% endif %}{{ c.perf_simple|floatformat:2 }} %{% else %}—{% endif %}
+        </td>
+        <td class="num {% if c.perf_modifiee > 0 %}pos{% elif c.perf_modifiee < 0 %}neg{% else %}neu{% endif %}">
+          {% if c.perf_modifiee is not None %}{% if c.perf_modifiee > 0 %}+{% endif %}{{ c.perf_modifiee|floatformat:2 }} %{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="empty-row"><td colspan="5">Aucun client rattaché à ce plan.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- ═══ PIED DE PAGE ═══ -->
+  <div class="footer">
+    <table>
+      <tr>
+        <td>CGF GESTION — Reporting PEE / PER — Document confidentiel</td>
+        <td class="right">Page {{ forloop.counter }} / {{ rapports|length }}</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+{% empty %}
+<div class="page">
+  <div class="header-rule"></div>
+  <p style="text-align:center;color:#5D6E6E;padding:60px 0;">
+    Aucune donnée à afficher pour la sélection.
+  </p>
+</div>
+{% endfor %}
+
+{% if auto_print and not pdf_mode %}
+<script>window.addEventListener('load', function () { window.print(); });</script>
+{% endif %}
+</body>
+</html>

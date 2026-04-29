@@ -1,0 +1,908 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Plans - Reporting{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-bar-chart-fill me-2" style="color: var(--accent-color, #1E4C82);"></i>Dashboard - Analyse des Plans
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-pee-per">
+
+    <!-- ===== Filtres ===== -->
+    <div class="dashboard-filters card shadow-sm mb-3">
+        <div class="card-body py-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-1 small text-muted">Recherche</label>
+                    <input type="text" class="form-control form-control-sm" id="searchPortefeuille" placeholder="Nom du plan...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Date début</label>
+                    <input type="date" class="form-control form-control-sm" id="dateDebut" value="{{ date_debut_defaut }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Date fin</label>
+                    <input type="date" class="form-control form-control-sm" id="dateFin" value="{{ date_fin_defaut }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Méthode Dietz</label>
+                    <select class="form-select form-select-sm" id="methodeDietz">
+                        <option value="simple">Simple</option>
+                        <option value="modifiee">Modifiée</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="reinitialiserFiltres()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Réinitialiser
+                    </button>
+                    <span class="badge bg-light text-dark border ms-1" id="perfPeriode">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Rangée KPIs ===== -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="kpi-card kpi-primary">
+                <div class="kpi-icon"><i class="bi bi-briefcase-fill"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Plans</div>
+                    <div class="kpi-value">{{ total_portefeuilles }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card kpi-success">
+                <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Clients</div>
+                    <div class="kpi-value">{{ total_clients }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card kpi-info">
+                <div class="kpi-icon"><i class="bi bi-arrow-left-right"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Transactions</div>
+                    <div class="kpi-value">{{ total_transactions }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card kpi-warning">
+                <div class="kpi-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">FCP</div>
+                    <div class="kpi-value">{{ total_fcp }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Rangée Performance globale (4 KPIs larges) ===== -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="perf-kpi">
+                <div class="perf-kpi-label">Encours total</div>
+                <div class="perf-kpi-value" id="globalEncours">-</div>
+                <div class="perf-kpi-sub text-muted">Valeur actuelle</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="perf-kpi">
+                <div class="perf-kpi-label">Plus/Moins-value latente</div>
+                <div class="perf-kpi-value" id="globalPlusValue">-</div>
+                <div class="perf-kpi-sub text-muted">Valeur - Coût d'acquisition</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="perf-kpi">
+                <div class="perf-kpi-label">Performance Dietz Simple</div>
+                <div class="perf-kpi-value" id="globalPerfSimple">-</div>
+                <div class="perf-kpi-sub text-muted">sur la période</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="perf-kpi">
+                <div class="perf-kpi-label">Performance Dietz Modifiée</div>
+                <div class="perf-kpi-value" id="globalPerfModifiee">-</div>
+                <div class="perf-kpi-sub text-muted">pondérée dans le temps</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Rangée graphiques principaux ===== -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Flux mensuels : souscriptions vs rachats</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height:260px;position:relative;">
+                        <canvas id="chartFlux"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Répartition des encours par plan</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height:260px;position:relative;">
+                        <canvas id="chartRepartition"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Rangée Top performers + liste plans ===== -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-7">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Top 5 plans (performance)</h6>
+                    <small class="text-muted">selon la méthode sélectionnée</small>
+                </div>
+                <div class="card-body">
+                    <div style="height:260px;position:relative;">
+                        <canvas id="chartTopPlans"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-folder-fill me-2 text-primary"></i>Sélection du plan</h6>
+                    <span class="badge bg-primary" id="portefeuillesCount">{{ total_portefeuilles }}</span>
+                </div>
+                <div class="card-body p-0" style="max-height: 260px; overflow-y:auto;">
+                    <div class="list-group list-group-flush" id="portefeuillesList">
+                        {% for pf in portefeuilles %}
+                        <a href="#" class="list-group-item list-group-item-action portefeuille-item"
+                           data-nom="{{ pf.nom_per_pee }}"
+                           onclick="selectPortefeuille('{{ pf.nom_per_pee }}')">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{ pf.nom_per_pee }}</div>
+                                    <small class="text-muted">{{ pf.nb_clients }} client(s) • {{ pf.nb_transactions }} trans.</small>
+                                </div>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Aucun plan trouvé
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Panneau détail du plan sélectionné ===== -->
+    <div class="card dashboard-card mb-3" id="detailCard">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-diagram-3 me-2 text-primary"></i>
+                Détail du plan : <span id="portefeuilleNom" class="text-dark">Sélectionnez un plan</span>
+            </h6>
+            <span class="badge bg-secondary" id="portefeuilleMeta" style="display:none;"></span>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-5 text-muted" id="portefeuillePlaceholder">
+                <i class="bi bi-folder-symlink fs-1 d-block mb-2"></i>
+                Cliquez sur un plan dans la liste ci-dessus pour afficher son détail.
+            </div>
+
+            <div id="portefeuilleDetails" style="display:none;">
+                <!-- KPIs du plan -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div class="mini-kpi">
+                            <span class="mini-kpi-label">Encours</span>
+                            <span class="mini-kpi-value" id="encoursTotalPf">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-kpi">
+                            <span class="mini-kpi-label">Coût d'acquisition</span>
+                            <span class="mini-kpi-value" id="coutAcquisitionPf">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-kpi">
+                            <span class="mini-kpi-label">Plus-value</span>
+                            <span class="mini-kpi-value" id="plusValuePf">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-kpi">
+                            <span class="mini-kpi-label">Performance</span>
+                            <span class="mini-kpi-value">
+                                <span id="perfSimplePf" class="me-2">-</span>
+                                <small class="text-muted">|</small>
+                                <span id="perfModifieePf" class="ms-2">-</span>
+                            </span>
+                            <small class="text-muted">Dietz Simple | Modifiée</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts + table -->
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <div class="card h-100">
+                            <div class="card-header bg-white py-2">
+                                <small class="fw-semibold text-muted"><i class="bi bi-graph-up me-1"></i>Évolution de la valeur (fin de mois)</small>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:240px;position:relative;">
+                                    <canvas id="chartPfEvolution"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card h-100">
+                            <div class="card-header bg-white py-2">
+                                <small class="fw-semibold text-muted"><i class="bi bi-pie-chart me-1"></i>Allocation FCP</small>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:240px;position:relative;">
+                                    <canvas id="chartPfAllocation"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution des rendements des adhérents -->
+                <div class="row g-3 mt-1">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                                <small class="fw-semibold text-muted">
+                                    <i class="bi bi-bar-chart-steps me-1"></i>Distribution des rendements des adhérents
+                                </small>
+                                <small class="text-muted">
+                                    <span class="d-inline-block me-2" style="width:18px;height:3px;background:var(--accent-color,#1E4C82);vertical-align:middle;"></span>
+                                    Rendement du plan
+                                </small>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:240px;position:relative;">
+                                    <canvas id="chartPfDistribution"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglets FCP / Clients -->
+                <ul class="nav nav-tabs mt-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#fcpTab" type="button" role="tab">
+                            <i class="bi bi-table me-1"></i>Détail FCP
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientsTab" type="button" role="tab">
+                            <i class="bi bi-people me-1"></i>Clients <span class="badge bg-secondary ms-1" id="clientsTabCount">0</span>
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 rounded-bottom p-3">
+                    <div class="tab-pane fade show active" id="fcpTab" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>FCP</th>
+                                        <th class="text-end">Quantité</th>
+                                        <th class="text-end">VL</th>
+                                        <th class="text-end">Valeur</th>
+                                        <th class="text-end">+/- value</th>
+                                        <th class="text-end">% du plan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fcpTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="clientsTab" role="tabpanel">
+                        <div class="table-responsive" style="max-height: 300px; overflow-y:auto;">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>N° compte</th>
+                                        <th class="text-end">Valeur</th>
+                                        <th class="text-end">Dietz Simple</th>
+                                        <th class="text-end">Dietz Modifiée</th>
+                                        <th class="text-center">Ouvrir</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clientsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.dashboard-pee-per { padding-top: 0.5rem; }
+
+.kpi-card {
+    background: #fff;
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06));
+    border: 1px solid rgba(10,35,66,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 4px 12px rgba(10,35,66,0.08)); }
+.kpi-icon {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+}
+.kpi-primary .kpi-icon { background: rgba(10,35,66,0.08);  color: var(--blue-900,#0A2342); }
+.kpi-success .kpi-icon { background: rgba(30,76,130,0.10); color: var(--blue-700,#1E4C82); }
+.kpi-info    .kpi-icon { background: rgba(44,82,130,0.12); color: var(--blue-600,#2C5282); }
+.kpi-warning .kpi-icon { background: rgba(82,96,109,0.12); color: var(--gray-600,#52606D); }
+
+.kpi-info .kpi-label, .kpi-card .kpi-label {
+    font-size: 0.8rem; color: var(--text-muted,#7B8794); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;
+}
+.kpi-card .kpi-value {
+    font-size: 1.75rem; font-weight: 700; color: var(--primary-color,#0A2342); line-height: 1.1;
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+}
+
+.perf-kpi {
+    background: linear-gradient(135deg, #fff 0%, var(--bg-tertiary,#F5F7FA) 100%);
+    border-left: 4px solid var(--accent-color,#1E4C82);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06));
+    height: 100%;
+}
+.perf-kpi-label {
+    font-size: 0.75rem; color: var(--text-muted,#7B8794); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+}
+.perf-kpi-value {
+    font-size: 1.5rem; font-weight: 700; color: var(--primary-color,#0A2342); line-height: 1.3;
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    margin-top: 0.25rem;
+}
+.perf-kpi-sub { font-size: 0.75rem; margin-top: 0.25rem; }
+
+.dashboard-card { border: 1px solid rgba(10,35,66,0.06); box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06)); background: #fff; }
+.dashboard-card .card-header { border-bottom: 1px solid rgba(10,35,66,0.06); padding: 0.75rem 1rem; background: #fff; }
+.dashboard-card .card-header h6 { font-family: 'Cambria', 'Georgia', serif; font-weight: 600; font-size: 0.95rem; color: var(--primary-color); }
+
+.portefeuille-item.active {
+    background-color: var(--primary-color,#0A2342) !important;
+    color: white !important;
+}
+.portefeuille-item.active .text-muted,
+.portefeuille-item.active .bi { color: rgba(255,255,255,0.8) !important; }
+
+.mini-kpi {
+    background: #fff;
+    border: 1px solid rgba(10,35,66,0.08);
+    border-radius: var(--border-radius, 8px);
+    padding: 0.75rem 1rem;
+    display: flex; flex-direction: column;
+    height: 100%;
+}
+.mini-kpi-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted,#7B8794); font-weight: 600; letter-spacing: 0.05em; }
+.mini-kpi-value { font-size: 1.25rem; font-weight: 700; color: var(--primary-color,#0A2342); margin-top: 0.25rem; font-family: 'Cambria', 'Georgia', serif; }
+.mini-kpi-value small.text-muted { font-size: 0.7rem; }
+
+/* Charte : texte positif/négatif en nuances de bleu/gris */
+.dashboard-pee-per .text-success { color: var(--blue-700, #1E4C82) !important; }
+.dashboard-pee-per .text-danger  { color: var(--gray-700, #3E4C59) !important; }
+</style>
+
+<script>
+let selectedPortefeuille = null;
+let chartFlux = null, chartRepartition = null, chartTopPlans = null;
+let chartPfEvolution = null, chartPfAllocation = null, chartPfDistribution = null;
+
+// Palette charte : uniquement bleus et gris
+const PALETTE = ['#0A2342', '#1E4C82', '#2C5282', '#3A6CA8', '#6B8FBF', '#A7BED9', '#52606D', '#7B8794', '#9AA5B1', '#CBD2D9'];
+const COLOR_POSITIVE = '#1E4C82';  // bleu moyen
+const COLOR_NEGATIVE = '#7B8794';  // gris moyen
+const COLOR_PRIMARY = '#0A2342';   // bleu marine
+
+function formatNumber(num, digits=2) {
+    if (num === null || num === undefined) return '-';
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(num);
+}
+
+function formatMontant(val) {
+    if (val === null || val === undefined) return '-';
+    if (Math.abs(val) >= 1_000_000) return (val / 1_000_000).toFixed(2) + ' M FCFA';
+    if (Math.abs(val) >= 1_000)     return (val / 1_000).toFixed(0) + ' K FCFA';
+    return formatNumber(val) + ' FCFA';
+}
+
+function formatPct(val) {
+    if (val === null || val === undefined) return '<span class="text-muted">-</span>';
+    const color = val >= 0 ? 'text-success' : 'text-danger';
+    const sign = val >= 0 ? '+' : '';
+    return `<span class="${color} fw-bold">${sign}${formatNumber(val)}%</span>`;
+}
+
+function formatMontantColor(val) {
+    if (val === null || val === undefined) return '-';
+    const color = val >= 0 ? 'text-success' : 'text-danger';
+    const sign = val >= 0 ? '+' : '';
+    return `<span class="${color} fw-bold">${sign}${formatMontant(val)}</span>`;
+}
+
+function filtrerPortefeuilles() {
+    const search = (document.getElementById('searchPortefeuille').value || '').toLowerCase();
+    const items = document.querySelectorAll('.portefeuille-item');
+    let n = 0;
+    items.forEach(item => {
+        const nom = (item.dataset.nom || '').toLowerCase();
+        const ok = !search || nom.includes(search);
+        item.style.display = ok ? '' : 'none';
+        if (ok) n++;
+    });
+    document.getElementById('portefeuillesCount').textContent = n;
+}
+
+function reinitialiserFiltres() {
+    document.getElementById('searchPortefeuille').value = '';
+    filtrerPortefeuilles();
+}
+
+function selectPortefeuille(nom) {
+    selectedPortefeuille = nom;
+    document.querySelectorAll('.portefeuille-item').forEach(it => {
+        it.classList.toggle('active', it.dataset.nom === nom);
+    });
+    chargerDetailsPortefeuille();
+}
+
+function chargerPerformanceGlobale() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    fetch(`/api/performance-globale/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+            document.getElementById('perfPeriode').textContent = `${data.date_debut} → ${data.date_fin}`;
+            document.getElementById('globalEncours').textContent = formatMontant(data.global.encours);
+            document.getElementById('globalPlusValue').innerHTML = formatMontantColor(data.global.plus_value);
+            document.getElementById('globalPerfSimple').innerHTML = formatPct(data.global.perf_simple);
+            document.getElementById('globalPerfModifiee').innerHTML = formatPct(data.global.perf_modifiee);
+        });
+}
+
+function chargerFluxDashboard() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    fetch(`/api/dashboard/encours/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            const labels = data.evolution.map(e => e.label);
+            const sub = data.evolution.map(e => e.souscriptions || 0);
+            const rach = data.evolution.map(e => e.rachats || 0);
+
+            if (chartFlux) chartFlux.destroy();
+            const ctx = document.getElementById('chartFlux').getContext('2d');
+            chartFlux = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Souscriptions', data: sub, backgroundColor: COLOR_POSITIVE, borderRadius: 4, stack: 'flux' },
+                        { label: 'Rachats', data: rach.map(v => -v), backgroundColor: COLOR_NEGATIVE, borderRadius: 4, stack: 'flux' },
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const v = Math.abs(ctx.parsed.y);
+                                    return `${ctx.dataset.label}: ${formatMontant(v)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: {
+                            stacked: true,
+                            ticks: { callback: v => formatMontant(Math.abs(v)) },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+        });
+}
+
+function chargerRepartitionPlans() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    const methode = document.getElementById('methodeDietz').value;
+
+    fetch(`/api/top-flop-performances/?date_debut=${dateDebut}&date_fin=${dateFin}&methode=${methode}&top_n=50`)
+        .then(r => r.json())
+        .then(data => {
+            // Donut répartition encours par plan
+            const all = (data.top_pee_per || []).concat(data.flop_pee_per || []);
+            const dedup = {};
+            all.forEach(p => { dedup[p.nom] = p; });
+            const plans = Object.values(dedup).filter(p => p.valeur_actuelle > 0);
+
+            if (chartRepartition) chartRepartition.destroy();
+            const ctx1 = document.getElementById('chartRepartition').getContext('2d');
+            chartRepartition = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: plans.map(p => p.nom),
+                    datasets: [{
+                        data: plans.map(p => p.valeur_actuelle),
+                        backgroundColor: plans.map((_, i) => PALETTE[i % PALETTE.length]),
+                        borderWidth: 2, borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '60%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.label}: ${formatMontant(ctx.parsed)}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Top 5 performers
+            const sorted = [...plans].sort((a, b) => b.performance - a.performance);
+            const top5 = sorted.slice(0, 5);
+
+            if (chartTopPlans) chartTopPlans.destroy();
+            const ctx2 = document.getElementById('chartTopPlans').getContext('2d');
+            chartTopPlans = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: top5.map(p => p.nom),
+                    datasets: [{
+                        label: 'Performance (%)',
+                        data: top5.map(p => p.performance),
+                        backgroundColor: top5.map(p => p.performance >= 0 ? COLOR_POSITIVE : COLOR_NEGATIVE),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => `${formatNumber(ctx.parsed.x)}%` } }
+                    },
+                    scales: {
+                        x: { ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+}
+
+function chargerDetailsPortefeuille() {
+    if (!selectedPortefeuille) return;
+
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+
+    document.getElementById('portefeuillePlaceholder').style.display = 'none';
+    document.getElementById('portefeuilleDetails').style.display = '';
+    document.getElementById('portefeuilleNom').textContent = selectedPortefeuille;
+
+    fetch(`/api/portefeuille/${encodeURIComponent(selectedPortefeuille)}/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+
+            document.getElementById('portefeuilleMeta').style.display = '';
+            document.getElementById('portefeuilleMeta').textContent = `${data.nb_clients} client(s)`;
+
+            document.getElementById('encoursTotalPf').textContent = formatMontant(data.valeur_totale);
+            document.getElementById('coutAcquisitionPf').textContent = formatMontant(data.cout_acquisition);
+            document.getElementById('plusValuePf').innerHTML = formatMontantColor(data.plus_value);
+            document.getElementById('perfSimplePf').innerHTML = formatPct(data.perf_simple);
+            document.getElementById('perfModifieePf').innerHTML = formatPct(data.perf_modifiee);
+
+            // FCP table
+            const body = document.getElementById('fcpTableBody');
+            body.innerHTML = data.fcp_details.length === 0
+                ? '<tr><td colspan="6" class="text-center text-muted py-3">Aucune position</td></tr>'
+                : data.fcp_details.map(f => `
+                    <tr>
+                        <td><i class="bi bi-file-earmark-text me-1 text-muted"></i>${f.nom_fcp}</td>
+                        <td class="text-end">${formatNumber(f.quantite, 4)}</td>
+                        <td class="text-end">${formatNumber(f.vl_actuelle)}</td>
+                        <td class="text-end">${formatMontant(f.valeur)}</td>
+                        <td class="text-end">${formatMontantColor(f.plus_value)}</td>
+                        <td class="text-end" style="min-width:150px;">
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height:10px;">
+                                    <div class="progress-bar bg-primary" style="width:${f.pct_portefeuille}%"></div>
+                                </div>
+                                <small>${f.pct_portefeuille.toFixed(1)}%</small>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+
+            // Clients table
+            document.getElementById('clientsTabCount').textContent = data.clients.length;
+            const cb = document.getElementById('clientsTableBody');
+            cb.innerHTML = data.clients.length === 0
+                ? '<tr><td colspan="6" class="text-center text-muted py-3">Aucun client</td></tr>'
+                : data.clients.map(c => `
+                    <tr>
+                        <td>${c.nom_prenom || c.numero_compte}</td>
+                        <td><code>${c.numero_compte}</code></td>
+                        <td class="text-end">${formatMontant(c.valeur)}</td>
+                        <td class="text-end">${formatPct(c.perf_simple)}</td>
+                        <td class="text-end">${formatPct(c.perf_modifiee)}</td>
+                        <td class="text-center">
+                            <a href="/analyse-client/?client=${encodeURIComponent(c.numero_compte)}"
+                               class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        </td>
+                    </tr>`).join('');
+
+            // Donut allocation FCP
+            if (chartPfAllocation) chartPfAllocation.destroy();
+            const ctx = document.getElementById('chartPfAllocation').getContext('2d');
+            chartPfAllocation = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.fcp_details.map(f => f.nom_fcp),
+                    datasets: [{
+                        data: data.fcp_details.map(f => f.valeur),
+                        backgroundColor: data.fcp_details.map((_, i) => PALETTE[i % PALETTE.length]),
+                        borderWidth: 2, borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '55%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatMontant(ctx.parsed)}` } }
+                    }
+                }
+            });
+
+            // Distribution des rendements des adhérents (avec ligne verticale du rendement du plan)
+            renderDistributionRendements(data);
+        });
+
+    // Courbe évolution mensuelle
+    fetch(`/api/portefeuille/${encodeURIComponent(selectedPortefeuille)}/evolution/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+            if (chartPfEvolution) chartPfEvolution.destroy();
+            const ctx = document.getElementById('chartPfEvolution').getContext('2d');
+            chartPfEvolution = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.serie.map(s => s.label),
+                    datasets: [{
+                        label: 'Valeur du plan',
+                        data: data.serie.map(s => s.valeur),
+                        borderColor: COLOR_PRIMARY,
+                        backgroundColor: 'rgba(10,35,66,0.08)',
+                        borderWidth: 2.5,
+                        tension: 0.3, fill: true,
+                        pointBackgroundColor: COLOR_POSITIVE, pointRadius: 3, pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => formatMontant(ctx.parsed.y) } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { ticks: { callback: v => formatMontant(v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                    }
+                }
+            });
+        });
+}
+
+// Histogramme des rendements des adhérents + ligne verticale du rendement du plan
+function renderDistributionRendements(data) {
+    const methode = document.getElementById('methodeDietz').value;
+    const champPerf = methode === 'modifiee' ? 'perf_modifiee' : 'perf_simple';
+    const labelMethode = methode === 'modifiee' ? 'Dietz Modifiée' : 'Dietz Simple';
+
+    const perfs = (data.clients || [])
+        .map(c => c[champPerf])
+        .filter(v => v !== null && v !== undefined && !isNaN(v));
+
+    if (chartPfDistribution) { chartPfDistribution.destroy(); chartPfDistribution = null; }
+
+    const ctx = document.getElementById('chartPfDistribution').getContext('2d');
+
+    if (perfs.length === 0) {
+        chartPfDistribution = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Aucune donnée de rendement client disponible', font: { size: 12 }, color: '#7B8794' }
+                }
+            }
+        });
+        return;
+    }
+
+    // Bornes incluant le rendement du plan pour qu'il soit toujours visible
+    const perfPlan = data[champPerf];
+    let vmin = Math.min(...perfs);
+    let vmax = Math.max(...perfs);
+    if (perfPlan !== null && perfPlan !== undefined) {
+        vmin = Math.min(vmin, perfPlan);
+        vmax = Math.max(vmax, perfPlan);
+    }
+    if (vmin === vmax) { vmin -= 1; vmax += 1; }
+
+    // Bins (Sturges, borné entre 6 et 12)
+    const nBins = Math.max(6, Math.min(12, Math.ceil(Math.log2(perfs.length) + 1)));
+    const range = vmax - vmin;
+    const binWidth = range / nBins;
+    const counts = new Array(nBins).fill(0);
+    perfs.forEach(v => {
+        let idx = Math.floor((v - vmin) / binWidth);
+        if (idx >= nBins) idx = nBins - 1;
+        if (idx < 0) idx = 0;
+        counts[idx] += 1;
+    });
+    const labels = counts.map((_, i) => {
+        const a = vmin + i * binWidth;
+        const b = a + binWidth;
+        return `${a.toFixed(1)}% ; ${b.toFixed(1)}%`;
+    });
+    const colors = counts.map((_, i) => {
+        const center = vmin + (i + 0.5) * binWidth;
+        return center >= 0 ? COLOR_POSITIVE : COLOR_NEGATIVE;
+    });
+
+    // Position relative (en unité d'index de bin) du rendement du plan, pour ligne verticale
+    const planBinPos = (perfPlan !== null && perfPlan !== undefined)
+        ? (perfPlan - vmin) / binWidth - 0.5
+        : null;
+
+    // Plugin custom : ligne verticale
+    const verticalLinePlugin = {
+        id: 'verticalLinePlan',
+        afterDatasetsDraw(chart) {
+            if (planBinPos === null) return;
+            const xScale = chart.scales.x;
+            const yScale = chart.scales.y;
+            const x = xScale.getPixelForValue(planBinPos);
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.strokeStyle = COLOR_PRIMARY;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(x, yScale.top);
+            ctx.lineTo(x, yScale.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // Étiquette
+            const txt = `Plan : ${perfPlan >= 0 ? '+' : ''}${perfPlan.toFixed(2)}%`;
+            ctx.font = '600 11px sans-serif';
+            const tw = ctx.measureText(txt).width + 10;
+            const tx = Math.min(Math.max(x - tw / 2, xScale.left + 2), xScale.right - tw - 2);
+            const ty = yScale.top + 4;
+            ctx.fillStyle = COLOR_PRIMARY;
+            ctx.fillRect(tx, ty, tw, 18);
+            ctx.fillStyle = '#fff';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(txt, tx + 5, ty + 9);
+            ctx.restore();
+        }
+    };
+
+    chartPfDistribution = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Nombre d'adhérents (${labelMethode})`,
+                data: counts,
+                backgroundColor: colors,
+                borderRadius: 4,
+                categoryPercentage: 1.0,
+                barPercentage: 0.98,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: items => `Rendement : ${items[0].label}`,
+                        label: ctx => `${ctx.parsed.y} adhérent(s)`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    title: { display: true, text: "Nombre d'adhérents", font: { size: 11 } }
+                }
+            }
+        },
+        plugins: [verticalLinePlugin]
+    });
+}
+
+function rafraichirDashboard() {
+    chargerPerformanceGlobale();
+    chargerFluxDashboard();
+    chargerRepartitionPlans();
+    if (selectedPortefeuille) chargerDetailsPortefeuille();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    rafraichirDashboard();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pfParam = urlParams.get('portefeuille');
+    if (pfParam) selectPortefeuille(pfParam);
+
+    document.getElementById('searchPortefeuille').addEventListener('input', filtrerPortefeuilles);
+    document.getElementById('dateDebut').addEventListener('change', rafraichirDashboard);
+    document.getElementById('dateFin').addEventListener('change', rafraichirDashboard);
+    document.getElementById('methodeDietz').addEventListener('change', rafraichirDashboard);
+});
+</script>
+{% endblock %}

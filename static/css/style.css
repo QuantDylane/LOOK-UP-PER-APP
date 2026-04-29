@@ -1,0 +1,1974 @@
+/* PER/PEE Reporting - Charte : nuances de bleu & gris, fond blanc, police Cambria */
+
+/* ============================================
+   VARIABLES - Blues & Grays Palette
+============================================ */
+:root {
+    /* Bleus CGF - palette officielle (du plus foncé au plus clair)
+       Tire du logo CGF Gestion : bleu royal #004C90 + gris #495B5B */
+    --primary-color: #004C90;        /* Bleu CGF officiel (logo) */
+    --primary-dark: #003366;         /* Bleu CGF foncé */
+    --primary-light: #E5EFF8;        /* Bleu CGF très pâle */
+
+    --blue-900: #003366;             /* Bleu CGF foncé */
+    --blue-800: #003D73;
+    --blue-700: #004C90;             /* Bleu CGF officiel - accent */
+    --blue-600: #165FA3;
+    --blue-500: #3A7AB8;
+    --blue-400: #6795C9;
+    --blue-300: #99B6DB;
+    --blue-200: #C9D8EC;
+    --blue-100: #E5EFF8;
+    --blue-050: #F2F7FB;
+
+    /* Accent : bleu CGF */
+    --accent-color: #004C90;
+    --accent-light: #E5EFF8;
+    --accent-dark: #003366;
+
+    /* Gris CGF (du plus foncé au plus clair) */
+    --gray-900: #2B3636;
+    --gray-800: #384747;
+    --gray-700: #495B5B;             /* Gris CGF officiel (logo) */
+    --gray-600: #5D6E6E;
+    --gray-500: #7E8C8C;
+    --gray-400: #9BA7A7;
+    --gray-300: #C7CECE;
+    --gray-200: #E2E6E6;
+    --gray-100: #F3F5F5;
+    --gray-050: #FAFBFB;
+
+    /* Gris secondaires (alias) */
+    --secondary-color: #495B5B;      /* Gris CGF */
+    --secondary-light: #7E8C8C;
+
+    /* Statuts : variantes de bleu/gris uniquement */
+    --success-color: #004C90;        /* Bleu CGF (au lieu de vert) */
+    --success-light: #E5EFF8;
+    --warning-color: #5D6E6E;        /* Gris CGF (au lieu de doré) */
+    --warning-light: #F3F5F5;
+    --danger-color: #384747;         /* Gris très foncé (au lieu de rouge) */
+    --danger-light: #E2E6E6;
+    --info-color: #165FA3;
+    --info-light: #E5EFF8;
+
+    /* Fonds : blanc pur et gris très clairs */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F5F7FA;
+
+    /* Texte */
+    --text-primary: #1F2933;
+    --text-secondary: #3E4C59;
+    --text-muted: #7B8794;
+
+    /* Dimensions */
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+    --navbar-height: 65px;
+    --border-radius: 8px;
+    --border-radius-lg: 12px;
+
+    /* Ombres (teintées bleu CGF) */
+    --shadow-sm: 0 1px 2px rgba(0, 76, 144, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 76, 144, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 76, 144, 0.14);
+    --shadow-gold: 0 4px 16px rgba(0, 76, 144, 0.22);  /* alias conservé (bleu CGF) */
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+    --transition-slow: 0.4s ease;
+}
+
+/* ============================================
+   RESET & BASE STYLES
+============================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tous les titres en Cambria */
+h1, h2, h3, h4, h5, h6,
+.card-header h5,
+.welcome-card h2,
+.page-header-card h4 {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: -0.01em;
+}
+
+/* Forcer Cambria sur les éléments de formulaire et code */
+input, select, textarea, button, .form-control, .form-select,
+.btn, code, pre, .badge, .navbar, table, .table {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif !important;
+}
+
+/* ============================================
+   WRAPPER & LAYOUT
+============================================ */
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ============================================
+   SIDEBAR - Executive Style
+============================================ */
+.sidebar {
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transition: all var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(30, 76, 130, 0.2);
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-dark) 50%, var(--accent-color) 100%);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .sidebar-nav .nav-link span,
+.sidebar.collapsed .sidebar-header small,
+.sidebar.collapsed .sidebar-footer {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+    padding: 1.25rem 0.5rem;
+}
+
+.sidebar.collapsed .logo-container {
+    justify-content: center;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 1.75rem 1.5rem;
+    border-bottom: 1px solid rgba(30, 76, 130, 0.15);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-logo {
+    display: block;
+    width: auto;
+    height: 56px;               /* taille fixe : fiable lors du toggle */
+    max-width: 100%;
+    object-fit: contain;
+    filter: brightness(0) invert(1);   /* logo CGF en blanc sur la sidebar bleue */
+    transition: height var(--transition-normal), max-width var(--transition-normal);
+}
+
+.sidebar.collapsed .sidebar-logo {
+    height: 40px !important;
+    max-width: 56px !important;
+}
+
+/* Legacy - conservé pour compat si jamais un template utilise encore ces classes */
+.logo-icon {
+    font-size: 2rem;
+    color: var(--accent-color);
+    filter: drop-shadow(0 2px 4px rgba(0, 76, 144, 0.3));
+}
+
+.logo-text {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.sidebar-header small {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+    list-style: none;
+    padding: 1.25rem 0;
+    margin: 0;
+    flex: 1;
+}
+
+.sidebar-nav .nav-item {
+    margin: 0.375rem 1rem;
+}
+
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1.125rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-normal);
+    font-weight: 500;
+    font-size: 0.925rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar-nav .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: var(--accent-color);
+    border-radius: 0 2px 2px 0;
+    transition: height var(--transition-normal);
+}
+
+.sidebar-nav .nav-link i {
+    font-size: 1.15rem;
+    width: 26px;
+    text-align: center;
+    transition: color var(--transition-fast);
+}
+
+.sidebar-nav .nav-link:hover {
+    background-color: rgba(30, 76, 130, 0.1);
+    color: #fff;
+}
+
+.sidebar-nav .nav-link:hover::before {
+    height: 60%;
+}
+
+.sidebar-nav .nav-link:hover i {
+    color: var(--accent-color);
+}
+
+.sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, rgba(30, 76, 130, 0.2) 0%, rgba(30, 76, 130, 0.1) 100%);
+    color: #fff;
+    border: 1px solid rgba(30, 76, 130, 0.3);
+}
+
+.sidebar-nav .nav-link.active::before {
+    height: 70%;
+}
+
+.sidebar-nav .nav-link.active i {
+    color: var(--accent-color);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(30, 76, 130, 0.15);
+    text-align: center;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-footer small {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   MAIN CONTENT
+============================================ */
+.content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    transition: all var(--transition-normal);
+    background: var(--bg-primary);
+}
+
+.content.expanded {
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* ============================================
+   TOP NAVBAR
+============================================ */
+.top-navbar {
+    height: var(--navbar-height);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid rgba(10, 35, 66, 0.08);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.top-navbar .navbar-brand {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1.125rem;
+}
+
+.sidebar-toggle {
+    color: var(--secondary-color);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-fast);
+}
+
+.sidebar-toggle:hover {
+    color: var(--accent-color);
+    background: var(--accent-light);
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+============================================ */
+.main-content {
+    padding: 2rem;
+}
+
+/* ============================================
+   CARDS - Executive Style
+============================================ */
+.card {
+    border: 1px solid rgba(10, 35, 66, 0.08);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    background: var(--bg-secondary);
+    transition: all var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background: linear-gradient(180deg, #FAFBFC 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid rgba(10, 35, 66, 0.06);
+    padding: 1.125rem 1.5rem;
+    font-weight: 600;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.card-header h5 i {
+    color: var(--accent-color);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ============================================
+   WELCOME CARD - Premium Style
+============================================ */
+.welcome-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    border-radius: var(--border-radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(30, 76, 130, 0.2);
+}
+
+.welcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(30, 76, 130, 0.15) 0%, transparent 70%);
+    transform: translate(30%, -30%);
+}
+
+.welcome-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-dark), var(--accent-color));
+}
+
+.welcome-card h2 {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+    color: #fff;
+    position: relative;
+}
+
+.welcome-card p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1rem;
+    position: relative;
+}
+
+/* ============================================
+   PAGE HEADER CARD
+============================================ */
+.page-header-card {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(10, 35, 66, 0.06);
+    border-left: 4px solid var(--accent-color);
+}
+
+.page-header-card h4 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.page-header-card p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ============================================
+   STAT CARDS - Executive Style
+============================================ */
+.stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: all var(--transition-normal);
+    border: 1px solid rgba(10, 35, 66, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-color);
+    transform: scaleY(0);
+    transition: transform var(--transition-normal);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(30, 76, 130, 0.2);
+}
+
+.stat-card:hover::before {
+    transform: scaleY(1);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.bg-primary-light {
+    background: linear-gradient(135deg, var(--primary-light) 0%, #CFDCEB 100%);
+    color: var(--primary-color);
+}
+
+.bg-success-light {
+    background: linear-gradient(135deg, var(--success-light) 0%, #CFDCEB 100%);
+    color: var(--success-color);
+}
+
+.bg-warning-light {
+    background: linear-gradient(135deg, var(--accent-light) 0%, #CFDCEB 100%);
+    color: var(--accent-dark);
+}
+
+.bg-info-light {
+    background: linear-gradient(135deg, var(--info-light) 0%, #CFDCEB 100%);
+    color: var(--info-color);
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-value {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0;
+    line-height: 1.1;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0;
+    margin-top: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   QUICK ACTION CARDS
+============================================ */
+.quick-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg-tertiary);
+    border: 2px dashed rgba(10, 35, 66, 0.15);
+    border-radius: var(--border-radius-lg);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-normal);
+}
+
+.quick-action-card:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-dark);
+    background: var(--accent-light);
+    transform: translateY(-2px);
+}
+
+.quick-action-card i {
+    font-size: 2.25rem;
+    margin-bottom: 0.75rem;
+    transition: transform var(--transition-normal);
+}
+
+.quick-action-card:hover i {
+    transform: scale(1.1);
+    color: var(--accent-color);
+}
+
+.quick-action-card span {
+    font-weight: 600;
+    font-size: 0.925rem;
+}
+
+/* ============================================
+   TABLES - Executive Style
+============================================ */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
+    border-bottom: 2px solid var(--accent-color);
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    padding: 1rem 1.25rem;
+}
+
+.table tbody td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    border-color: rgba(10, 35, 66, 0.06);
+    color: var(--text-primary);
+}
+
+.table-hover tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--accent-light);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(10, 35, 66, 0.02);
+}
+
+/* ============================================
+   FORMS - Executive Style
+============================================ */
+.form-control,
+.form-select {
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(10, 35, 66, 0.15);
+    padding: 0.75rem 1rem;
+    font-size: 0.925rem;
+    transition: all var(--transition-fast);
+    background-color: var(--bg-secondary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(30, 76, 130, 0.15);
+    background-color: var(--bg-secondary);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   BUTTONS - Executive Style
+============================================ */
+.btn {
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all var(--transition-normal);
+    font-size: 0.925rem;
+    letter-spacing: 0.25px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-gold);
+    color: var(--primary-dark);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-light);
+    border-color: var(--secondary-light);
+}
+
+/* Bouton accent doré */
+.btn-gold {
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+    border: none;
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.btn-gold:hover {
+    background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-gold);
+    color: var(--primary-dark);
+}
+
+/* ============================================
+   PLACEHOLDER CONTENT
+============================================ */
+.placeholder-chart {
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
+    border-radius: var(--border-radius);
+}
+
+.placeholder-content {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.placeholder-content i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+    color: var(--accent-color);
+}
+
+/* ============================================
+   FEATURE ITEMS
+============================================ */
+.feature-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--accent-color);
+    transition: all var(--transition-fast);
+}
+
+.feature-item:hover {
+    background: var(--accent-light);
+}
+
+.feature-item i {
+    font-size: 1.25rem;
+    color: var(--accent-color);
+}
+
+/* ============================================
+   MESSAGES & ALERTS
+============================================ */
+.messages-container {
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    background: var(--success-light);
+    border-left-color: var(--success-color);
+    color: var(--success-color);
+}
+
+.alert-warning {
+    background: var(--warning-light);
+    border-left-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.alert-danger {
+    background: var(--danger-light);
+    border-left-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.alert-info {
+    background: var(--info-light);
+    border-left-color: var(--info-color);
+    color: var(--info-color);
+}
+
+/* ============================================
+   BADGES - Executive Style
+============================================ */
+.badge {
+    font-weight: 600;
+    padding: 0.5em 0.85em;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.badge.bg-primary {
+    background: var(--primary-color) !important;
+}
+
+.badge.bg-success {
+    background: var(--success-color) !important;
+}
+
+.badge.bg-warning {
+    background: var(--accent-color) !important;
+    color: var(--primary-dark) !important;
+}
+
+.badge.bg-danger {
+    background: var(--danger-color) !important;
+}
+
+/* ============================================
+   TEXT UTILITIES
+============================================ */
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.text-success {
+    color: var(--success-color) !important;
+}
+
+.text-warning {
+    color: var(--accent-color) !important;
+}
+
+.text-danger {
+    color: var(--danger-color) !important;
+}
+
+.text-info {
+    color: var(--info-color) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-gold {
+    color: var(--accent-color) !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+============================================ */
+@media (max-width: 991.98px) {
+    .sidebar {
+        width: var(--sidebar-collapsed-width);
+    }
+    
+    .sidebar .logo-text,
+    .sidebar .sidebar-nav .nav-link span,
+    .sidebar .sidebar-header small,
+    .sidebar .sidebar-footer {
+        display: none;
+    }
+    
+    .sidebar .logo-container {
+        justify-content: center;
+    }
+    
+    .content {
+        margin-left: var(--sidebar-collapsed-width);
+        width: calc(100% - var(--sidebar-collapsed-width));
+    }
+    
+    .main-content {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .sidebar {
+        width: 0;
+        overflow: hidden;
+    }
+    
+    .sidebar.show {
+        width: var(--sidebar-width);
+    }
+    
+    .content {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .main-content {
+        padding: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1.25rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .welcome-card {
+        padding: 1.75rem;
+    }
+    
+    .welcome-card h2 {
+        font-size: 1.35rem;
+    }
+}
+
+/* ============================================
+   SCROLLBAR - Executive Style
+============================================ */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--secondary-color) 0%, var(--secondary-light) 100%);
+    border-radius: 5px;
+    border: 2px solid var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+/* ============================================
+   ABOUT PAGE
+============================================ */
+.about-logo {
+    opacity: 0.95;
+    filter: drop-shadow(0 4px 8px rgba(10, 35, 66, 0.2));
+}
+
+.version-info {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--accent-color);
+}
+
+.contact-info a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.contact-info a:hover {
+    color: var(--accent-dark);
+    text-decoration: underline;
+}
+
+/* ============================================
+   SPECIAL EFFECTS
+============================================ */
+
+/* Effet de brillance sur les éléments dorés */
+@keyframes goldShimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+.gold-shimmer {
+    background: linear-gradient(
+        90deg,
+        var(--accent-color) 0%,
+        #A7BED9 25%,
+        var(--accent-color) 50%,
+        #A7BED9 75%,
+        var(--accent-color) 100%
+    );
+    background-size: 200% auto;
+    animation: goldShimmer 3s linear infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Séparateur doré élégant */
+.gold-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+    border: none;
+    margin: 1.5rem 0;
+}
+
+/* Bordure dorée pour éléments en vedette */
+.gold-border {
+    border: 2px solid var(--accent-color) !important;
+    box-shadow: var(--shadow-gold);
+}
+
+/* ============================================
+   DATA DISPLAY ENHANCEMENTS
+============================================ */
+
+/* Pour les nombres et données financières */
+.financial-value {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.financial-value.positive {
+    color: var(--success-color);
+}
+
+.financial-value.negative {
+    color: var(--danger-color);
+}
+
+/* Indicateur de tendance */
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.trend-indicator.up {
+    color: var(--success-color);
+}
+
+.trend-indicator.down {
+    color: var(--danger-color);
+}
+
+.trend-indicator.neutral {
+    color: var(--text-muted);
+}
+
+/* ============================================
+   ACCUEIL PAGE - SIDEBAR LAYOUT
+============================================ */
+
+/* Sidebar filtres sur la page accueil */
+.accueil-sidebar {
+    background: var(--bg-secondary);
+    border-right: 1px solid rgba(10, 35, 66, 0.08);
+    min-height: calc(100vh - var(--navbar-height));
+    position: sticky;
+    top: var(--navbar-height);
+}
+
+.sidebar-content {
+    padding: 1.25rem;
+}
+
+.sidebar-section-header {
+    padding: 0.75rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+.sidebar-section-header h6 {
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.sidebar-section-header h6 i {
+    color: var(--accent-color);
+}
+
+/* Filtres */
+.sidebar-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-label i {
+    color: var(--accent-color);
+}
+
+.sidebar-filters .form-control,
+.sidebar-filters .form-select {
+    font-size: 0.875rem;
+    border-color: rgba(10, 35, 66, 0.15);
+    transition: all var(--transition-fast);
+}
+
+.sidebar-filters .form-control:focus,
+.sidebar-filters .form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(30, 76, 130, 0.15);
+}
+
+/* Indicateur de chargement */
+.sidebar-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    background: var(--accent-light);
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+    color: var(--primary-color);
+}
+
+/* Statistiques mini */
+.sidebar-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.stat-mini {
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    text-align: center;
+    border: 1px solid rgba(10, 35, 66, 0.06);
+    transition: all var(--transition-fast);
+}
+
+.stat-mini:hover {
+    border-color: var(--accent-color);
+    background: var(--accent-light);
+}
+
+.stat-mini-value {
+    display: block;
+    font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-mini-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+.stat-mini-sub {
+    font-size: 0.65rem;
+    margin-top: 0.15rem;
+    line-height: 1.2;
+}
+
+/* Filtres actifs */
+.sidebar-active-filters {
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--accent-color);
+}
+
+.sidebar-active-filters .badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Contenu principal accueil */
+.accueil-main-content {
+    padding: 1.5rem;
+    background: var(--bg-primary);
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+/* Responsive pour accueil sidebar */
+@media (max-width: 991.98px) {
+    .accueil-sidebar {
+        position: relative;
+        top: 0;
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(10, 35, 66, 0.08);
+    }
+    
+    .sidebar-content {
+        padding: 1rem;
+    }
+    
+    .sidebar-filters {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1 1 calc(33.333% - 0.75rem);
+        min-width: 150px;
+    }
+    
+    .sidebar-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .sidebar-active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .sidebar-active-filters .badge {
+        display: inline-block;
+    }
+    
+    .accueil-main-content {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .filter-group {
+        flex: 1 1 100%;
+    }
+    
+    .sidebar-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ============================================
+   DASHBOARD TABS - Executive Style
+============================================ */
+.nav-tabs-dashboard {
+    border-bottom: 2px solid var(--primary-light);
+}
+
+.nav-tabs-dashboard .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 0;
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    position: relative;
+}
+
+.nav-tabs-dashboard .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: var(--accent-color);
+    transform: translateX(-50%);
+    transition: width var(--transition-normal);
+}
+
+.nav-tabs-dashboard .nav-link:hover {
+    color: var(--primary-color);
+    background-color: var(--bg-tertiary);
+}
+
+.nav-tabs-dashboard .nav-link.active {
+    color: var(--primary-color);
+    background-color: transparent;
+    font-weight: 600;
+}
+
+.nav-tabs-dashboard .nav-link.active::after {
+    width: 80%;
+}
+
+.nav-tabs-dashboard .nav-link i {
+    color: var(--accent-color);
+}
+
+/* ============================================
+   DASHBOARD CHARTS
+============================================ */
+.chart-container {
+    position: relative;
+    height: 100%;
+    min-height: 250px;
+}
+
+/* Heatmap Table */
+#heatmapTable {
+    font-size: 0.85rem;
+}
+
+#heatmapTable th,
+#heatmapTable td {
+    padding: 0.5rem;
+    vertical-align: middle;
+    text-align: center;
+    min-width: 60px;
+}
+
+#heatmapTable .sticky-col {
+    position: sticky;
+    left: 0;
+    background: var(--bg-secondary);
+    z-index: 1;
+    text-align: left;
+    min-width: 150px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#heatmapTable thead .sticky-col {
+    background: var(--bg-tertiary);
+    z-index: 2;
+}
+
+/* FCP Select for VL Chart */
+#fcpSelect {
+    height: auto;
+    max-height: 120px;
+}
+
+#fcpSelect option {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Card Footer Stats */
+.card-footer .row {
+    margin: 0;
+}
+
+.card-footer .col-6 {
+    padding: 0.5rem;
+}
+
+/* Performance Calendar Table */
+#calendarPerfBody tr:hover {
+    background-color: rgba(30, 76, 130, 0.05);
+}
+
+#calendarPerfBody .badge {
+    font-weight: 500;
+}
+
+/* Responsive Dashboard */
+@media (max-width: 991.98px) {
+    .nav-tabs-dashboard .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    #heatmapTable {
+        font-size: 0.75rem;
+    }
+    
+    #heatmapTable th,
+    #heatmapTable td {
+        padding: 0.35rem;
+        min-width: 50px;
+    }
+    
+    #heatmapTable .sticky-col {
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .nav-tabs-dashboard .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .nav-tabs-dashboard .nav-link i {
+        display: none;
+    }
+}
+
+/* ============================================
+   SECTION INDEPENDANTE DES FILTRES
+============================================ */
+.independent-section {
+    border-top: 2px dashed var(--secondary-light) !important;
+}
+
+.independent-section-wrapper {
+    background: var(--bg-primary);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    margin-top: 1rem;
+    border-top: 2px dashed var(--secondary-light);
+}
+
+.section-separator {
+    text-align: center;
+    position: relative;
+}
+
+.section-separator .badge {
+    background-color: var(--bg-secondary) !important;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.section-separator .badge i {
+    color: var(--accent-color);
+}
+
+/* ============================================
+   COLLAPSIBLE CARD SECTIONS
+============================================ */
+.collapse-icon {
+    transition: transform var(--transition-normal);
+    font-size: 0.85em;
+}
+
+[data-bs-toggle="collapse"][aria-expanded="false"] .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+[data-bs-toggle="collapse"][aria-expanded="true"] .collapse-icon {
+    transform: rotate(0deg);
+}
+
+[data-bs-toggle="collapse"]:hover {
+    opacity: 0.8;
+}
+
+
+/* ============================================
+   GLOBAL OVERRIDES - Charte graphique
+   Neutralise les couleurs Bootstrap (vert/rouge/jaune) pour les remplacer
+   par la palette bleus/gris de la charte. Voir CHARTE_GRAPHIQUE.md.
+   Appliqué globalement : toutes les pages respectent la charte sans
+   avoir a modifier chaque template.
+============================================ */
+
+/* --- Texte de statut --- */
+.text-success { color: var(--blue-700) !important; }
+.text-danger  { color: var(--gray-700) !important; }
+.text-warning { color: var(--gray-600) !important; }
+.text-info    { color: var(--blue-600) !important; }
+.text-primary { color: var(--primary-color) !important; }
+
+/* --- Fonds de statut --- */
+.bg-success   { background-color: var(--blue-700) !important; color: #fff !important; }
+.bg-danger    { background-color: var(--gray-800) !important; color: #fff !important; }
+.bg-warning   { background-color: var(--gray-600) !important; color: #fff !important; }
+.bg-info      { background-color: var(--blue-600) !important; color: #fff !important; }
+.bg-primary   { background-color: var(--primary-color) !important; color: #fff !important; }
+
+/* --- Badges contextuels (ex: badge bg-white text-success sur fond coloré) --- */
+.bg-success .badge.bg-white.text-success,
+.bg-success .badge.bg-white { color: var(--blue-700) !important; }
+.bg-danger  .badge.bg-white.text-danger,
+.bg-danger  .badge.bg-white { color: var(--gray-800) !important; }
+.bg-warning .badge.bg-white.text-warning,
+.bg-warning .badge.bg-white { color: var(--gray-600) !important; }
+
+/* --- Boutons --- */
+.btn-success {
+    background-color: var(--blue-700) !important;
+    border-color: var(--blue-700) !important;
+    color: #fff !important;
+}
+.btn-success:hover, .btn-success:focus {
+    background-color: var(--blue-800) !important;
+    border-color: var(--blue-800) !important;
+}
+.btn-danger {
+    background-color: var(--gray-800) !important;
+    border-color: var(--gray-800) !important;
+    color: #fff !important;
+}
+.btn-danger:hover, .btn-danger:focus {
+    background-color: var(--gray-900) !important;
+    border-color: var(--gray-900) !important;
+}
+.btn-warning {
+    background-color: var(--gray-600) !important;
+    border-color: var(--gray-600) !important;
+    color: #fff !important;
+}
+.btn-warning:hover, .btn-warning:focus {
+    background-color: var(--gray-700) !important;
+    border-color: var(--gray-700) !important;
+}
+.btn-outline-success {
+    color: var(--blue-700) !important;
+    border-color: var(--blue-700) !important;
+    background-color: transparent !important;
+}
+.btn-outline-success:hover {
+    background-color: var(--blue-700) !important;
+    color: #fff !important;
+}
+.btn-outline-danger {
+    color: var(--gray-800) !important;
+    border-color: var(--gray-800) !important;
+    background-color: transparent !important;
+}
+.btn-outline-danger:hover {
+    background-color: var(--gray-800) !important;
+    color: #fff !important;
+}
+
+/* --- Alertes --- */
+.alert-success {
+    background-color: var(--blue-100) !important;
+    border-color: var(--blue-300) !important;
+    color: var(--blue-800) !important;
+}
+.alert-danger {
+    background-color: var(--gray-200) !important;
+    border-color: var(--gray-400) !important;
+    color: var(--gray-900) !important;
+}
+.alert-warning {
+    background-color: var(--gray-100) !important;
+    border-color: var(--gray-300) !important;
+    color: var(--gray-800) !important;
+}
+.alert-info {
+    background-color: var(--blue-100) !important;
+    border-color: var(--blue-300) !important;
+    color: var(--blue-800) !important;
+}
+.alert-primary {
+    background-color: var(--blue-100) !important;
+    border-color: var(--blue-400) !important;
+    color: var(--primary-color) !important;
+}
+
+/* ============================================
+   DARK MODE - Mode sombre
+   Active via [data-theme="dark"] sur <html>.
+   On ne change que les variables semantiques (fonds, texte, neutres,
+   ombres, "light tints" de statut). L'identite bleu CGF reste intacte
+   (--primary-color, --accent-color, --blue-* inchanges) pour preserver
+   la charte. Tout composant utilisant les variables CSS s'adapte donc
+   automatiquement, sans aucune modification de template.
+============================================ */
+[data-theme="dark"] {
+    /* Fonds : noir bleute, jamais noir pur (style executive) */
+    --bg-primary:   #0E1620;   /* fond app */
+    --bg-secondary: #15202B;   /* cartes, navbar, formulaires */
+    --bg-tertiary:  #1B2735;   /* en-tetes de tableaux, zones secondaires */
+
+    /* Texte : tons clairs, contraste AA */
+    --text-primary:   #E6EAF0;
+    --text-secondary: #B6C0CC;
+    --text-muted:     #8B97A6;
+
+    /* Neutres inverses (gris) - on inverse l'echelle pour que les
+       composants utilisant --gray-100..200 comme "fond clair" deviennent
+       sombres, et ceux utilisant --gray-700..900 comme "texte fonce"
+       deviennent clairs. */
+    --gray-900: #F3F5F5;
+    --gray-800: #E2E6E6;
+    --gray-700: #C7CECE;
+    --gray-600: #9BA7A7;
+    --gray-500: #7E8C8C;
+    --gray-400: #5D6E6E;
+    --gray-300: #495B5B;
+    --gray-200: #384747;
+    --gray-100: #2B3636;
+    --gray-050: #1F2A2A;
+
+    /* Light tints des bleus : on les rend sombres pour rester subtils
+       sur fond noir bleute (sinon les fonds d'alerte explosent en blanc). */
+    --primary-light: #1A2F47;
+    --accent-light:  #1A2F47;
+    --blue-100:      #1A2F47;
+    --blue-050:      #14253A;
+    --blue-200:      #22426A;
+
+    /* Tints "statuts pales" alignes */
+    --success-light: #1A2F47;
+    --info-light:    #1A2F47;
+    --warning-light: #2B3636;
+    --danger-light:  #2B3636;
+
+    /* Ombres : plus profondes, opacite renforcee */
+    --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.6);
+    --shadow-gold: 0 4px 16px rgba(0, 76, 144, 0.45);
+}
+
+/* Patch : couleurs ecrites en dur dans le CSS (rgba/hex) qui ne passent
+   pas par les variables et doivent donc etre forcees en sombre. */
+[data-theme="dark"] body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .page-header-card,
+[data-theme="dark"] .stat-card {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .card-header {
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .table tbody td {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .table thead th {
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+}
+
+[data-theme="dark"] .top-navbar {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .accueil-sidebar {
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control::placeholder { color: var(--text-muted); }
+
+[data-theme="dark"] .quick-action-card {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .nav-tabs-dashboard .nav-link:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* Bootstrap navbar-light -> en sombre il faut forcer les liens en clair */
+[data-theme="dark"] .top-navbar.navbar-light { color: var(--text-primary); }
+[data-theme="dark"] .top-navbar .text-muted { color: var(--text-muted) !important; }
+
+/* Bouton de bascule du theme (lune/soleil) */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--secondary-color);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--border-radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    margin-right: 0.75rem;
+}
+.theme-toggle:hover {
+    color: var(--accent-color);
+    background: var(--accent-light);
+    border-color: var(--accent-color);
+}
+.theme-toggle .bi-sun-fill { display: none; }
+.theme-toggle .bi-moon-stars-fill { display: inline-block; }
+[data-theme="dark"] .theme-toggle {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+}
+[data-theme="dark"] .theme-toggle .bi-sun-fill { display: inline-block; }
+[data-theme="dark"] .theme-toggle .bi-moon-stars-fill { display: none; }
+
+/* Le logo CGF dans la sidebar est deja invert (blanc sur bleu) en clair
+   ET en sombre, donc rien a changer cote sidebar. */
+
+
+/* --- Progress bars --- */
+.progress-bar.bg-success { background-color: var(--blue-700) !important; }
+.progress-bar.bg-danger  { background-color: var(--gray-800) !important; }
+.progress-bar.bg-warning { background-color: var(--gray-600) !important; }
+.progress-bar.bg-info    { background-color: var(--blue-600) !important; }
+
+/* --- Bordures --- */
+.border-success { border-color: var(--blue-700) !important; }
+.border-danger  { border-color: var(--gray-800) !important; }
+.border-warning { border-color: var(--gray-600) !important; }
+.border-info    { border-color: var(--blue-600) !important; }
+
+/* --- Liens --- */
+a { color: var(--blue-700); }
+a:hover { color: var(--blue-800); }
+
+
+/* ============================================
+   SIDEBAR - User info & logout
+============================================ */
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+    color: rgba(255,255,255,0.9);
+    text-align: left;
+}
+.sidebar-user > i {
+    font-size: 1.75rem;
+    color: #fff;
+    opacity: 0.85;
+}
+.sidebar-user-info { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.sidebar-user-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+.sidebar-user-role {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.sidebar-logout-form { margin: 0; }
+.sidebar-logout-btn {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: var(--border-radius);
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    font-family: 'Cambria', 'Georgia', serif !important;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.sidebar-logout-btn:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.3);
+}
+.sidebar.collapsed .sidebar-user-info,
+.sidebar.collapsed .sidebar-logout-btn span,
+.sidebar.collapsed .sidebar-footer small.d-block { display: none; }
+.sidebar.collapsed .sidebar-logout-btn {
+    padding: 0.45rem;
+    font-size: 0;
+}
+.sidebar.collapsed .sidebar-logout-btn i { font-size: 1.05rem; margin: 0 !important; }
+.sidebar.collapsed .sidebar-user { justify-content: center; }
+
+
+/* ============================================
+   SIDEBAR - User info & logout
+============================================ */
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+    color: rgba(255,255,255,0.9);
+    text-align: left;
+}
+.sidebar-user > i {
+    font-size: 1.75rem;
+    color: #fff;
+    opacity: 0.85;
+}
+.sidebar-user-info { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.sidebar-user-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+.sidebar-user-role {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.sidebar-logout-form { margin: 0; }
+.sidebar-logout-btn {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: var(--border-radius);
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    font-family: 'Cambria', 'Georgia', serif !important;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.sidebar-logout-btn:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.3);
+}
+.sidebar.collapsed .sidebar-user-info,
+.sidebar.collapsed .sidebar-logout-btn span,
+.sidebar.collapsed .sidebar-footer small.d-block { display: none; }
+.sidebar.collapsed .sidebar-logout-btn {
+    padding: 0.45rem;
+    font-size: 0;
+}
+.sidebar.collapsed .sidebar-logout-btn i { font-size: 1.05rem; margin: 0 !important; }
+.sidebar.collapsed .sidebar-user { justify-content: center; }
+
+
+/* ============================================
+   EXCEPTION CHARTE - Performance (%)
+   Seules les valeurs en % peuvent deroger aux bleus/gris.
+   Vert si positif, rouge si negatif. Voir CHARTE_GRAPHIQUE.md sect. 3.
+============================================ */
+:root {
+    --perf-positive: #198754;   /* Bootstrap green 600 */
+    --perf-negative: #DC3545;   /* Bootstrap red 600 */
+    --perf-neutral:  var(--gray-600);
+}
+.perf-value { font-weight: 600; }
+.perf-positive, .text-perf-positive { color: var(--perf-positive) !important; }
+.perf-negative, .text-perf-negative { color: var(--perf-negative) !important; }
+.perf-neutral,  .text-perf-neutral  { color: var(--perf-neutral)  !important; }
+
+
+/* ============================================
+   RENFORCEMENT OVERRIDES - classes warning-light
+   Neutralise les halos dores herites; les stat-icon "warning-light"
+   deviennent de simples halos bleus conformes a la charte.
+============================================ */
+.bg-warning-light {
+    background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%) !important;
+    color: var(--gray-700) !important;
+}
+.stat-icon.bg-warning-light i,
+.stat-icon.bg-warning-light .bi { color: var(--gray-700) !important; }
+
+/* badge warning variants (au cas ou certains templates non migres) */
+.badge.bg-warning,
+.badge.bg-warning.text-dark {
+    background-color: var(--gray-600) !important;
+    color: #fff !important;
+}
+
+/* card-header bg-warning (plus forte specificite que Bootstrap) */
+.card-header.bg-warning,
+.card-header.bg-warning.text-dark {
+    background-color: var(--gray-600) !important;
+    color: #fff !important;
+}
+.card.border-warning { border-color: var(--gray-500) !important; }
+
+
+/* ============================================
+   EXCEPTION CHARTE - Performance (%)
+   Seules les valeurs en % peuvent deroger aux bleus/gris.
+   Vert si positif, rouge si negatif. Voir CHARTE_GRAPHIQUE.md sect. 3.
+============================================ */
+:root {
+    --perf-positive: #198754;   /* Bootstrap green 600 */
+    --perf-negative: #DC3545;   /* Bootstrap red 600 */
+    --perf-neutral:  var(--gray-600);
+}
+.perf-value { font-weight: 600; }
+.perf-positive, .text-perf-positive { color: var(--perf-positive) !important; }
+.perf-negative, .text-perf-negative { color: var(--perf-negative) !important; }
+.perf-neutral,  .text-perf-neutral  { color: var(--perf-neutral)  !important; }
+
+
+/* ============================================
+   RENFORCEMENT OVERRIDES - classes warning-light
+   Neutralise les halos dores herites; les stat-icon "warning-light"
+   deviennent de simples halos bleus conformes a la charte.
+============================================ */
+.bg-warning-light {
+    background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%) !important;
+    color: var(--gray-700) !important;
+}
+.stat-icon.bg-warning-light i,
+.stat-icon.bg-warning-light .bi { color: var(--gray-700) !important; }
+
+/* badge warning variants (au cas ou certains templates non migres) */
+.badge.bg-warning,
+.badge.bg-warning.text-dark {
+    background-color: var(--gray-600) !important;
+    color: #fff !important;
+}
+
+/* card-header bg-warning (plus forte specificite que Bootstrap) */
+.card-header.bg-warning,
+.card-header.bg-warning.text-dark {
+    background-color: var(--gray-600) !important;
+    color: #fff !important;
+}
+.card.border-warning { border-color: var(--gray-500) !important; }

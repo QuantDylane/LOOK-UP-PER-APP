@@ -1,0 +1,1152 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil - PER/PEE Reporting{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-house-fill me-2"></i>Accueil
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar Filtres -->
+        <div class="col-lg-3 col-xl-2">
+            <div class="accueil-sidebar">
+                <div class="sidebar-content">
+                    <!-- En-tête -->
+                    <div class="sidebar-section-header">
+                        <h6 class="mb-0"><i class="bi bi-funnel-fill me-2"></i>Filtres</h6>
+                    </div>
+                    
+                    <!-- Filtres -->
+                    <div class="sidebar-filters">
+                        <!-- Date de début -->
+                        <div class="filter-group">
+                            <label for="dateDebut" class="filter-label">
+                                <i class="bi bi-calendar-event me-1"></i>Date de début
+                            </label>
+                            <input type="date" class="form-control form-control-sm" id="dateDebut" value="{{ date_debut_defaut }}">
+                        </div>
+                        
+                        <!-- Date de fin -->
+                        <div class="filter-group">
+                            <label for="dateFin" class="filter-label">
+                                <i class="bi bi-calendar-check me-1"></i>Date de fin
+                            </label>
+                            <input type="date" class="form-control form-control-sm" id="dateFin" value="{{ date_fin_defaut }}">
+                        </div>
+                        
+                        <!-- Méthode de calcul -->
+                        <div class="filter-group">
+                            <label for="methodeDietz" class="filter-label">
+                                <i class="bi bi-calculator me-1"></i>Méthode de calcul
+                            </label>
+                            <select class="form-select form-select-sm" id="methodeDietz">
+                                <option value="simple" selected>Dietz Simple</option>
+                                <option value="modifiee">Dietz Modifiée</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Type de plan (masqué - tous les plans sont unifiés) -->
+                        <select id="typePlan" class="d-none"><option value="" selected></option></select>
+                        
+                        <!-- Top/Flop N -->
+                        <div class="filter-group">
+                            <label for="topN" class="filter-label">
+                                <i class="bi bi-sort-numeric-down me-1"></i>Top / Flop N
+                            </label>
+                            <select class="form-select form-select-sm" id="topN">
+                                <option value="3" selected>Top/Flop 3</option>
+                                <option value="5">Top/Flop 5</option>
+                                <option value="10">Top/Flop 10</option>
+                                <option value="15">Top/Flop 15</option>
+                                <option value="20">Top/Flop 20</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Indicateur de chargement -->
+                    <div class="sidebar-loading" id="loadingIndicator" style="display: none;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 small">Chargement...</span>
+                    </div>
+                    
+                    <!-- Statistiques rapides -->
+                    <div class="sidebar-section-header mt-4">
+                        <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Statistiques</h6>
+                    </div>
+                    
+                    <div class="sidebar-stats">
+                        <div class="stat-mini">
+                            <span class="stat-mini-value text-primary">{{ total_plans }}</span>
+                            <span class="stat-mini-label">Plans</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-mini-value text-warning">{{ total_clients }}</span>
+                            <span class="stat-mini-label">Clients</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-mini-value text-info">{{ total_fcp }}</span>
+                            <span class="stat-mini-label">FCP</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Badge période active -->
+                    <div class="sidebar-active-filters mt-3">
+                        <small class="text-muted d-block mb-2">Filtres actifs :</small>
+                        <span class="badge bg-light text-dark border d-block mb-1 text-start" id="badgePeriode"></span>
+                        <span class="badge bg-light text-dark border d-block mb-1 text-start" id="badgeMethode"></span>
+                        <span class="badge bg-light text-dark border d-block text-start" id="badgeTypePlan"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenu principal -->
+        <div class="col-lg-9 col-xl-10">
+            <div class="accueil-main-content">
+                <!-- Welcome Section -->
+                <div class="welcome-card mb-4">
+                    <h2>Bienvenue sur le système de reporting PER/PEE</h2>
+                    <p class="text-muted mb-0">
+                        Gérez et analysez les données de vos Plans Épargne Entreprise (PEE) et Plans Épargne Retraite (PER)
+                    </p>
+                </div>
+
+                <!-- Onglets Dashboard / Top-Flop -->
+                <ul class="nav nav-tabs nav-tabs-dashboard mb-4" id="accueilTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="topflop-tab" data-bs-toggle="tab" data-bs-target="#topflop" type="button" role="tab">
+                            <i class="bi bi-trophy me-2"></i>Top/Flop
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="accueilTabsContent">
+                    <!-- ==================== ONGLET DASHBOARD ==================== -->
+                    <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                        
+                        <!-- Ligne 1: Donut Encours + Area Chart Evolution -->
+                        <div class="row mb-4">
+                            <!-- Donut Chart - Répartition Encours par Plan -->
+                            <div class="col-lg-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Répartition Encours par Plan</h5>
+                                    </div>
+                                    <div class="card-body d-flex align-items-center justify-content-center">
+                                        <canvas id="donutEncours" style="max-height: 250px;"></canvas>
+                                    </div>
+                                    <div class="card-footer bg-transparent text-center">
+                                        <small class="text-muted d-block">Encours global</small>
+                                        <span class="fw-bold text-primary" id="donutTotalValue">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Area Chart - Évolution Encours par FCP -->
+                            <div class="col-lg-8 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Évolution Encours Net Mensuel par FCP</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="areaEncours" style="height: 250px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ligne 2: Heatmap Performances Mensuelles -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-grid-3x3 me-2"></i>Heatmap Performances Mensuelles</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered mb-0" id="heatmapTable">
+                                                <thead class="table-light">
+                                                    <tr id="heatmapHeader">
+                                                        <th class="sticky-col">Portefeuille</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="heatmapBody">
+                                                    <tr>
+                                                        <td colspan="13" class="text-center text-muted py-4">
+                                                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                                            Chargement...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ==================== ONGLET TOP/FLOP ==================== -->
+                    <div class="tab-pane fade" id="topflop" role="tabpanel">
+                        <!-- Top/Flop Plans (graphique à barres horizontales) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-trophy me-2"></i>Top / Flop <span id="topflopNLabelPlans">3</span> Plans
+                                        </h5>
+                                        <small class="text-muted">
+                                            <span class="badge bg-success me-1">&nbsp;</span>Top
+                                            <span class="badge bg-danger ms-2 me-1">&nbsp;</span>Flop
+                                        </small>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="topflop-chart-wrapper" style="position: relative; height: 320px;">
+                                            <canvas id="topflopPlansChart"></canvas>
+                                        </div>
+                                        <div id="topflopPlansEmpty" class="text-center text-muted py-4" style="display:none;">
+                                            <i class="bi bi-inbox me-2"></i>Aucune donnée disponible
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top/Flop Portefeuilles Clients (graphique à barres horizontales) -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-people-fill me-2"></i>Top / Flop <span id="topflopNLabelClients">3</span> Portefeuilles Clients
+                                        </h5>
+                                        <small class="text-muted">
+                                            <span class="badge bg-success me-1">&nbsp;</span>Top
+                                            <span class="badge bg-danger ms-2 me-1">&nbsp;</span>Flop
+                                        </small>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="topflop-chart-wrapper" style="position: relative; height: 320px;">
+                                            <canvas id="topflopClientsChart"></canvas>
+                                        </div>
+                                        <div id="topflopClientsEmpty" class="text-center text-muted py-4" style="display:none;">
+                                            <i class="bi bi-inbox me-2"></i>Aucune donnée disponible
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ==================== SECTION INDEPENDANTE DES FILTRES (Full Width) ==================== -->
+    <div class="independent-section-wrapper px-3 px-md-4">
+        <div class="section-separator mb-4 text-center">
+            <span class="badge bg-light text-dark border px-3 py-2">
+                <i class="bi bi-exclude me-2"></i>Section indépendante des filtres
+            </span>
+        </div>
+
+        <!-- Graphique VL Evolution (Indépendant) -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Évolution des Valeurs Liquidatives</h5>
+                <div class="d-flex align-items-center gap-3 mt-2 mt-md-0 flex-wrap">
+                    <select class="form-select form-select-sm" id="vlPeriodFilter" style="min-width: 120px;">
+                        <option value="3m">3 mois</option>
+                        <option value="6m">6 mois</option>
+                        <option value="1y" selected>1 an</option>
+                        <option value="3y">3 ans</option>
+                        <option value="origin">Origine</option>
+                    </select>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="base100Check" checked>
+                        <label class="form-check-label small" for="base100Check">Base 100</label>
+                    </div>
+                    <select class="form-select form-select-sm" id="fcpSelect" multiple style="min-width: 200px; max-width: 400px;">
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="vlEvolutionChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Tableau Performance Calendaire FCP -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <h5 class="mb-0">
+                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" href="#collapseCalendarPerf" role="button" aria-expanded="true" aria-controls="collapseCalendarPerf">
+                        <i class="bi bi-calendar3 me-2"></i>Performance Calendaire des FCP
+                        <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                    </a>
+                </h5>
+                <div class="d-flex gap-2 mt-2 mt-md-0">
+                    <select class="form-select form-select-sm" id="typeFondFilter" style="min-width: 140px;">
+                        <option value="">Tous types</option>
+                    </select>
+                    <select class="form-select form-select-sm" id="categorieFondFilter" style="min-width: 140px;">
+                        <option value="">Toutes catégories</option>
+                    </select>
+                </div>
+            </div>
+            <div class="collapse show" id="collapseCalendarPerf">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" id="calendarPerfTable">
+                        <thead class="table-light sticky-top" id="calendarPerfHeader">
+                            <tr>
+                                <th>FCP</th>
+                                <th>Type</th>
+                                <th>Catégorie</th>
+                                <th class="text-end">VL Actuelle</th>
+                                <th class="text-end">
+                                    <div>WTD</div>
+                                    <small class="text-muted fw-normal" id="periodWtd">-</small>
+                                </th>
+                                <th class="text-end">
+                                    <div>MTD</div>
+                                    <small class="text-muted fw-normal" id="periodMtd">-</small>
+                                </th>
+                                <th class="text-end">
+                                    <div>QTD</div>
+                                    <small class="text-muted fw-normal" id="periodQtd">-</small>
+                                </th>
+                                <th class="text-end">
+                                    <div>STD</div>
+                                    <small class="text-muted fw-normal" id="periodStd">-</small>
+                                </th>
+                                <th class="text-end">
+                                    <div>YTD</div>
+                                    <small class="text-muted fw-normal" id="periodYtd">-</small>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendarPerfBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                    Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <strong>WTD</strong> Week-to-Date | 
+                    <strong>MTD</strong> Month-to-Date | 
+                    <strong>QTD</strong> Quarter-to-Date | 
+                    <strong>STD</strong> Semester-to-Date | 
+                    <strong>YTD</strong> Year-to-Date
+                </small>
+            </div>
+            </div><!-- fin collapse -->
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== VARIABLES GLOBALES ====================
+let performanceCache = {};
+let debounceTimer = null;
+const DEBOUNCE_DELAY = 300;
+
+// Chart.js instances
+let donutChart = null;
+let areaChart = null;
+let vlChart = null;
+let topflopPlansChart = null;
+let topflopClientsChart = null;
+
+// Couleurs pour les graphiques - Palette charte (bleus / gris uniquement)
+const chartColors = [
+    '#0A2342', '#1E4C82', '#2C5282', '#3A6CA8', '#6B8FBF', '#A7BED9',
+    '#52606D', '#7B8794', '#9AA5B1', '#CBD2D9', '#103356', '#3E4C59'
+];
+
+// ==================== FONCTIONS UTILITAIRES ====================
+function getCacheKey() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    const methode = document.getElementById('methodeDietz').value;
+    const typePlan = document.getElementById('typePlan').value;
+    const topN = document.getElementById('topN').value;
+    return `${dateDebut}_${dateFin}_${methode}_${typePlan}_${topN}`;
+}
+
+function formatNumber(num) {
+    if (num === null || num === undefined) return '-';
+    return new Intl.NumberFormat('fr-FR', { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+    }).format(num);
+}
+
+function formatCurrency(num) {
+    if (num === null || num === undefined) return '-';
+    if (Math.abs(num) >= 1e9) {
+        return (num / 1e9).toFixed(2) + ' Mds';
+    } else if (Math.abs(num) >= 1e6) {
+        return (num / 1e6).toFixed(2) + ' M';
+    }
+    return formatNumber(num);
+}
+
+function formatPerformance(perf) {
+    if (perf === null || perf === undefined) return '-';
+    const color = perf >= 0 ? 'text-success' : 'text-danger';
+    const sign = perf >= 0 ? '+' : '';
+    return `<span class="${color} fw-bold">${sign}${formatNumber(perf)}%</span>`;
+}
+
+function formatPerfCell(perf) {
+    if (perf === null || perf === undefined) return { text: '-', class: '' };
+    const value = parseFloat(perf);
+    const sign = value >= 0 ? '+' : '';
+    return {
+        text: `${sign}${formatNumber(value)}%`,
+        class: value >= 0 ? 'text-success' : 'text-danger'
+    };
+}
+
+function getHeatmapColor(value) {
+    // Heatmap en nuances de bleu (positif) et gris (négatif) — charte graphique
+    if (value === null || value === undefined) return 'background-color: #F5F7FA;';
+    const v = parseFloat(value);
+    if (v > 5)  return 'background-color: #0A2342; color: white;';   // bleu marine
+    if (v > 2)  return 'background-color: #1E4C82; color: white;';   // bleu foncé
+    if (v > 0)  return 'background-color: #A7BED9;';                 // bleu clair
+    if (v > -2) return 'background-color: #E4E7EB;';                 // gris clair
+    if (v > -5) return 'background-color: #7B8794; color: white;';   // gris moyen
+    return 'background-color: #323F4B; color: white;';               // gris anthracite
+}
+
+function showLoading(show) {
+    const indicator = document.getElementById('loadingIndicator');
+    indicator.style.display = show ? 'flex' : 'none';
+}
+
+// ==================== TOP/FLOP PORTEFEUILLES ====================
+// Couleurs charte CGF (voir CHARTE_GRAPHIQUE.md §4)
+const TOP_COLOR  = '#004C90';  // bleu CGF — COLOR_POSITIVE
+const FLOP_COLOR = '#7E8C8C';  // gris CGF moyen — COLOR_NEGATIVE
+
+function _truncate(str, n) {
+    if (!str) return '';
+    return str.length > n ? str.slice(0, n - 1) + '…' : str;
+}
+
+function renderTopFlopPlansChart(top, flop) {
+    const canvas = document.getElementById('topflopPlansChart');
+    const empty = document.getElementById('topflopPlansEmpty');
+    if (topflopPlansChart) { topflopPlansChart.destroy(); topflopPlansChart = null; }
+
+    const items = [
+        ...((top || []).map(p => ({ ...p, _kind: 'top' }))),
+        ...((flop || []).slice().reverse().map(p => ({ ...p, _kind: 'flop' }))),
+    ];
+    if (items.length === 0) {
+        canvas.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+    canvas.style.display = 'block';
+    empty.style.display = 'none';
+
+    const labels = items.map(it => _truncate(it.nom || '-', 40));
+    const data = items.map(it => it.performance);
+    const colors = items.map(it => it._kind === 'top' ? TOP_COLOR : FLOP_COLOR);
+
+    // Hauteur dynamique du wrapper : 32px par barre + marges
+    const wrapper = canvas.parentNode;
+    wrapper.style.height = Math.max(280, items.length * 32 + 80) + 'px';
+
+    topflopPlansChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Performance (%)',
+                data: data,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1,
+                _meta: items,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { right: 16 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: function(ctx) {
+                            const it = items[ctx[0].dataIndex];
+                            return it.nom || '-';
+                        },
+                        label: function(ctx) {
+                            const it = items[ctx.dataIndex];
+                            const sign = it.performance >= 0 ? '+' : '';
+                            return [
+                                `Performance : ${sign}${formatNumber(it.performance)}%`,
+                                `Valeur actuelle : ${formatNumber(it.valeur_actuelle)} FCFA`,
+                                `${it._kind === 'top' ? 'Top' : 'Flop'}`,
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Performance (%)' },
+                    ticks: { callback: v => v + '%' }
+                },
+                y: { ticks: { autoSkip: false } }
+            }
+        }
+    });
+}
+
+function renderTopFlopClientsChart(top, flop) {
+    const canvas = document.getElementById('topflopClientsChart');
+    const empty = document.getElementById('topflopClientsEmpty');
+    if (topflopClientsChart) { topflopClientsChart.destroy(); topflopClientsChart = null; }
+
+    const items = [
+        ...((top || []).map(p => ({ ...p, _kind: 'top' }))),
+        ...((flop || []).slice().reverse().map(p => ({ ...p, _kind: 'flop' }))),
+    ];
+    if (items.length === 0) {
+        canvas.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+    canvas.style.display = 'block';
+    empty.style.display = 'none';
+
+    const labels = items.map(it => _truncate(it.nom_prenom || it.numero_compte || '-', 40));
+    const data = items.map(it => it.performance);
+    const colors = items.map(it => it._kind === 'top' ? TOP_COLOR : FLOP_COLOR);
+
+    const wrapper = canvas.parentNode;
+    wrapper.style.height = Math.max(280, items.length * 32 + 80) + 'px';
+
+    topflopClientsChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Performance (%)',
+                data: data,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { right: 16 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: function(ctx) {
+                            const it = items[ctx[0].dataIndex];
+                            return it.nom_prenom || it.numero_compte || '-';
+                        },
+                        label: function(ctx) {
+                            const it = items[ctx.dataIndex];
+                            const sign = it.performance >= 0 ? '+' : '';
+                            return [
+                                `Plan : ${it.nom_per_pee || '-'}`,
+                                `Performance : ${sign}${formatNumber(it.performance)}%`,
+                                `Valeur actuelle : ${formatNumber(it.valeur_actuelle)} FCFA`,
+                                `${it._kind === 'top' ? 'Top' : 'Flop'}`,
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Performance (%)' },
+                    ticks: { callback: v => v + '%' }
+                },
+                y: { ticks: { autoSkip: false } }
+            }
+        }
+    });
+}
+
+function chargerPerformances() {
+    const cacheKey = getCacheKey();
+    
+    if (performanceCache[cacheKey]) {
+        afficherResultats(performanceCache[cacheKey]);
+        return;
+    }
+    
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    const methode = document.getElementById('methodeDietz').value;
+    const typePlan = document.getElementById('typePlan').value;
+    const topN = document.getElementById('topN').value;
+    
+    document.getElementById('topflopNLabelPlans').textContent = topN;
+    document.getElementById('topflopNLabelClients').textContent = topN;
+    
+    showLoading(true);
+    
+    const url = `{% url 'reporting:api_top_flop_performances' %}?date_debut=${dateDebut}&date_fin=${dateFin}&methode=${methode}&type_plan=${typePlan}&top_n=${topN}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.error) {
+                console.error('Erreur:', data.error);
+                return;
+            }
+            performanceCache[cacheKey] = data;
+            afficherResultats(data);
+        })
+        .catch(error => {
+            showLoading(false);
+            console.error('Erreur lors du chargement:', error);
+        });
+}
+
+function afficherResultats(data) {
+    document.getElementById('badgePeriode').textContent = `📅 ${data.date_debut} - ${data.date_fin}`;
+    document.getElementById('badgeMethode').textContent = `📊 Dietz ${data.methode === 'simple' ? 'Simple' : 'Modifiée'}`;
+    document.getElementById('badgeTypePlan').textContent = '🏷️ Tous les plans';
+    
+    renderTopFlopPlansChart(data.top_pee_per, data.flop_pee_per);
+    renderTopFlopClientsChart(data.top_clients, data.flop_clients);
+}
+
+// ==================== DASHBOARD CHARTS ====================
+
+// Donut Chart - Encours par Plan
+function chargerEncoursDonut() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    
+    const url = `{% url 'reporting:api_dashboard_encours' %}?date_debut=${dateDebut}&date_fin=${dateFin}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Erreur encours:', data.error);
+                return;
+            }
+            
+            // Donut : répartition de l'encours par Plan à la date de fin
+            const donutItems = Array.isArray(data.donut) ? data.donut : [];
+            const labels = donutItems.map(d => d.nom_plan);
+            const values = donutItems.map(d => d.encours);
+            const colors = donutItems.map((_, i) => chartColors[i % chartColors.length]);
+            
+            // Encours global
+            const totalEncours = data.encours_total || values.reduce((a, b) => a + b, 0);
+            document.getElementById('donutTotalValue').textContent = formatCurrency(totalEncours) + ' FCFA';
+            
+            const ctx = document.getElementById('donutEncours').getContext('2d');
+            if (donutChart) donutChart.destroy();
+            
+            if (donutItems.length === 0) {
+                return;
+            }
+            
+            donutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} FCFA (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Area chart : encours mensuel empilé par FCP
+            renderAreaChart(data.evolution || [], data.fcps || labels);
+        })
+        .catch(error => {
+            console.error('Erreur chargement encours:', error);
+        });
+}
+
+// Stacked Bar Chart - Evolution Encours Mensuel par FCP (empilé)
+function renderAreaChart(evolution, fcpsOrder) {
+    const ctx = document.getElementById('areaEncours').getContext('2d');
+    if (areaChart) areaChart.destroy();
+    
+    if (!evolution || evolution.length === 0) {
+        return;
+    }
+    
+    // Si la liste des FCP n'est pas fournie, l'extraire de l'évolution
+    let fcps = Array.isArray(fcpsOrder) && fcpsOrder.length ? fcpsOrder.slice() : [];
+    if (fcps.length === 0) {
+        const set = new Set();
+        evolution.forEach(e => Object.keys(e.par_fcp || {}).forEach(f => set.add(f)));
+        fcps = Array.from(set).sort();
+    }
+    
+    const labels = evolution.map(e => e.label || e.mois || e.date);
+    const datasets = fcps.map((fcp, idx) => ({
+        label: fcp,
+        data: evolution.map(e => (e.par_fcp && e.par_fcp[fcp] !== undefined) ? e.par_fcp[fcp] : 0),
+        backgroundColor: chartColors[idx % chartColors.length] + 'CC',
+        borderColor: chartColors[idx % chartColors.length],
+        borderWidth: 1,
+        borderSkipped: false
+    }));
+    
+    areaChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)} FCFA`;
+                        },
+                        footer: function(items) {
+                            const total = items.reduce((sum, it) => sum + (it.parsed.y || 0), 0);
+                            return `Total : ${formatCurrency(total)} FCFA`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: { font: { size: 10 } }
+                },
+                y: {
+                    beginAtZero: true,
+                    stacked: true,
+                    ticks: {
+                        callback: function(value) { return formatCurrency(value); }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Calculer les dates selon la période sélectionnée
+function getVLPeriodDates() {
+    const period = document.getElementById('vlPeriodFilter').value;
+    const today = new Date();
+    let startDate = new Date();
+    
+    switch(period) {
+        case '3m':
+            startDate.setMonth(today.getMonth() - 3);
+            break;
+        case '6m':
+            startDate.setMonth(today.getMonth() - 6);
+            break;
+        case '1y':
+            startDate.setFullYear(today.getFullYear() - 1);
+            break;
+        case '3y':
+            startDate.setFullYear(today.getFullYear() - 3);
+            break;
+        case 'origin':
+            startDate = new Date('2000-01-01'); // Date très ancienne
+            break;
+    }
+    
+    return {
+        debut: startDate.toISOString().split('T')[0],
+        fin: today.toISOString().split('T')[0]
+    };
+}
+
+// VL Evolution Chart (Indépendant des filtres sidebar)
+function chargerVLEvolution() {
+    const dates = getVLPeriodDates();
+    const base100 = document.getElementById('base100Check').checked ? 'true' : 'false';
+    const fcpSelect = document.getElementById('fcpSelect');
+    const selectedFcps = Array.from(fcpSelect.selectedOptions).map(opt => opt.value);
+    
+    const fcpsParam = selectedFcps.join(',');
+    const url = `{% url 'reporting:api_vl_evolution' %}?date_debut=${dates.debut}&date_fin=${dates.fin}&base_100=${base100}&fcps=${fcpsParam}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Erreur VL:', data.error);
+                return;
+            }
+            
+            // Mettre à jour la liste des FCP disponibles si première fois
+            // L'API retourne fcps_available (liste de strings)
+            const fcpList = data.fcps_available || [];
+            if (fcpSelect.options.length <= 1 && fcpList.length > 0) {
+                fcpList.forEach(fcp => {
+                    const option = document.createElement('option');
+                    option.value = fcp;
+                    option.textContent = fcp;
+                    fcpSelect.appendChild(option);
+                });
+                // Sélectionner les 3 premiers par défaut
+                for (let i = 0; i < Math.min(3, fcpSelect.options.length); i++) {
+                    fcpSelect.options[i].selected = true;
+                }
+            }
+            
+            // L'API retourne series comme objet {nom_fcp: [{date, value}]}
+            renderVLChart(data.series, data.base_100);
+        })
+        .catch(error => {
+            console.error('Erreur chargement VL:', error);
+        });
+}
+
+function renderVLChart(series, isBase100) {
+    // series est un objet {nom_fcp: [{date, value}]}
+    if (!series || Object.keys(series).length === 0) {
+        const ctx = document.getElementById('vlEvolutionChart').getContext('2d');
+        if (vlChart) vlChart.destroy();
+        return;
+    }
+    
+    const ctx = document.getElementById('vlEvolutionChart').getContext('2d');
+    
+    if (vlChart) {
+        vlChart.destroy();
+    }
+    
+    // Convertir l'objet series en tableau pour Chart.js
+    const seriesEntries = Object.entries(series);
+    const datasets = seriesEntries.map(([nom, dataPoints], index) => ({
+        label: nom,
+        data: (dataPoints || []).map(d => ({ x: d.date, y: d.value })),
+        borderColor: chartColors[index % chartColors.length],
+        backgroundColor: 'transparent',
+        tension: 0.1,
+        pointRadius: 1
+    }));
+    
+    vlChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = isBase100 ? context.parsed.y.toFixed(2) : formatNumber(context.parsed.y);
+                            return `${label}: ${value}${isBase100 ? '' : ' FCFA'}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
+                    title: { display: true, text: 'Date' }
+                },
+                y: {
+                    title: { display: true, text: isBase100 ? 'Base 100' : 'VL (FCFA)' },
+                    ticks: {
+                        callback: function(value) {
+                            return isBase100 ? value.toFixed(0) : formatCurrency(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Heatmap Performances Mensuelles
+function chargerHeatmap() {
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    const methode = document.getElementById('methodeDietz').value;
+    const typePlan = document.getElementById('typePlan').value;
+    
+    const url = `{% url 'reporting:api_heatmap_mensuel' %}?date_debut=${dateDebut}&date_fin=${dateFin}&methode=${methode}&type_plan=${typePlan}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Erreur heatmap:', data.error);
+                return;
+            }
+            
+            renderHeatmap(data.mois, data.portefeuilles);
+        })
+        .catch(error => {
+            console.error('Erreur chargement heatmap:', error);
+        });
+}
+
+function renderHeatmap(mois, portefeuilles) {
+    const thead = document.getElementById('heatmapHeader');
+    const tbody = document.getElementById('heatmapBody');
+    
+    if (!mois || mois.length === 0 || !portefeuilles || portefeuilles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-4">Aucune donnée disponible</td></tr>';
+        return;
+    }
+    
+    // Header
+    let headerHtml = '<th class="sticky-col">Portefeuille</th>';
+    mois.forEach(m => {
+        headerHtml += `<th class="text-center">${m}</th>`;
+    });
+    thead.innerHTML = `<tr>${headerHtml}</tr>`;
+    
+    // Body
+    let bodyHtml = '';
+    portefeuilles.forEach(p => {
+        bodyHtml += `<tr><td class="sticky-col fw-bold">${p.nom}</td>`;
+        mois.forEach(m => {
+            const perf = p.performances[m];
+            const style = getHeatmapColor(perf);
+            const formatted = perf !== null && perf !== undefined ? `${perf >= 0 ? '+' : ''}${parseFloat(perf).toFixed(2)}%` : '-';
+            bodyHtml += `<td class="text-center" style="${style}">${formatted}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml;
+}
+
+// ==================== PERFORMANCE CALENDAIRE FCP ====================
+function chargerPerformanceCalendaire() {
+    const typeFond = document.getElementById('typeFondFilter').value;
+    const categorieFond = document.getElementById('categorieFondFilter').value;
+    const tbody = document.getElementById('calendarPerfBody');
+    
+    // Afficher le loading
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="9" class="text-center text-muted py-4">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Chargement...
+            </td>
+        </tr>
+    `;
+    
+    const url = `{% url 'reporting:api_fcp_calendar_performance' %}?type_fond=${typeFond}&categorie_fond=${categorieFond}`;
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error('Erreur perf calendaire:', data.error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-danger py-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Erreur: ${data.error}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Mettre à jour les périodes dans les en-têtes
+            if (data.periodes) {
+                document.getElementById('periodWtd').textContent = data.periodes.wtd || '-';
+                document.getElementById('periodMtd').textContent = data.periodes.mtd || '-';
+                document.getElementById('periodQtd').textContent = data.periodes.qtd || '-';
+                document.getElementById('periodStd').textContent = data.periodes.std || '-';
+                document.getElementById('periodYtd').textContent = data.periodes.ytd || '-';
+            }
+            
+            // Remplir les filtres si première fois
+            const typeFondSelect = document.getElementById('typeFondFilter');
+            const categorieFondSelect = document.getElementById('categorieFondFilter');
+            
+            if (typeFondSelect.options.length <= 1 && data.types_fond) {
+                data.types_fond.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t;
+                    option.textContent = t;
+                    typeFondSelect.appendChild(option);
+                });
+            }
+            
+            if (categorieFondSelect.options.length <= 1 && data.categories_fond) {
+                data.categories_fond.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c;
+                    option.textContent = c;
+                    categorieFondSelect.appendChild(option);
+                });
+            }
+            
+            // L'API retourne 'performances' pas 'fcps'
+            renderCalendarTable(data.performances || data.fcps || []);
+        })
+        .catch(error => {
+            console.error('Erreur chargement perf calendaire:', error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-danger py-4">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Erreur de chargement: ${error.message}
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+function renderCalendarTable(fcps) {
+    const tbody = document.getElementById('calendarPerfBody');
+    
+    if (!fcps || fcps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Aucune donnée disponible</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    fcps.forEach(fcp => {
+        const wtd = formatPerfCell(fcp.wtd);
+        const mtd = formatPerfCell(fcp.mtd);
+        const qtd = formatPerfCell(fcp.qtd);
+        const std = formatPerfCell(fcp.std);
+        const ytd = formatPerfCell(fcp.ytd);
+        
+        // L'API retourne nom_fcp pas nom
+        const nomFcp = fcp.nom_fcp || fcp.nom || '-';
+        
+        html += `
+            <tr>
+                <td class="fw-bold">${nomFcp}</td>
+                <td><span class="badge bg-light text-dark">${fcp.type_fond || '-'}</span></td>
+                <td><span class="badge bg-secondary">${fcp.categorie_fond || '-'}</span></td>
+                <td class="text-end">${formatNumber(fcp.vl_actuelle)}</td>
+                <td class="text-end ${wtd.class}">${wtd.text}</td>
+                <td class="text-end ${mtd.class}">${mtd.text}</td>
+                <td class="text-end ${qtd.class}">${qtd.text}</td>
+                <td class="text-end ${std.class}">${std.text}</td>
+                <td class="text-end ${ytd.class}">${ytd.text}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+// ==================== EVENT HANDLERS ====================
+function onFilterChange() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        chargerPerformances();
+        chargerEncoursDonut();
+        chargerHeatmap();
+    }, DEBOUNCE_DELAY);
+}
+
+function onVLFilterChange() {
+    chargerVLEvolution();
+}
+
+function onCalendarFilterChange() {
+    chargerPerformanceCalendaire();
+}
+
+// ==================== INITIALISATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // Charger toutes les données
+    chargerPerformances();
+    chargerEncoursDonut();
+    chargerVLEvolution();
+    chargerHeatmap();
+    chargerPerformanceCalendaire();
+    
+    // Sidebar filters
+    document.getElementById('dateDebut').addEventListener('change', onFilterChange);
+    document.getElementById('dateFin').addEventListener('change', onFilterChange);
+    document.getElementById('methodeDietz').addEventListener('change', onFilterChange);
+    document.getElementById('typePlan').addEventListener('change', onFilterChange);
+    document.getElementById('topN').addEventListener('change', onFilterChange);
+    
+    // VL Chart filters (indépendants)
+    document.getElementById('vlPeriodFilter').addEventListener('change', onVLFilterChange);
+    document.getElementById('base100Check').addEventListener('change', onVLFilterChange);
+    document.getElementById('fcpSelect').addEventListener('change', onVLFilterChange);
+    
+    // Calendar performance filters
+    document.getElementById('typeFondFilter').addEventListener('change', onCalendarFilterChange);
+    document.getElementById('categorieFondFilter').addEventListener('change', onCalendarFilterChange);
+
+    // Forcer le redimensionnement des charts Top/Flop quand l'onglet devient visible
+    // (sinon Chart.js calcule des dimensions nulles tant que le tab-pane est masqué).
+    const topflopTabBtn = document.getElementById('topflop-tab');
+    if (topflopTabBtn) {
+        topflopTabBtn.addEventListener('shown.bs.tab', function() {
+            if (topflopPlansChart) topflopPlansChart.resize();
+            if (topflopClientsChart) topflopClientsChart.resize();
+        });
+    }
+});
+</script>
+{% endblock %}

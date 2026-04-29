@@ -1,0 +1,1565 @@
+{% extends 'base.html' %}
+
+{% block title %}Métadonnées - Reporting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-responsive thead.sticky-top th {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+    .table-responsive {
+        scrollbar-width: thin;
+    }
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 4px;
+    }
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        background-color: #fff;
+        border-bottom: 3px solid var(--accent-color);
+    }
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-bottom: 3px solid #dee2e6;
+    }
+    .tab-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-database-fill me-2"></i>Métadonnées
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header-card">
+                <h4>Gestion des Métadonnées</h4>
+                <p class="text-muted mb-0">
+                    Consultez et gérez les informations sur les PEE/PER et les FCP
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="metadonneesTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pee-per-tab" data-bs-toggle="tab" data-bs-target="#pee-per" type="button" role="tab" aria-controls="pee-per" aria-selected="true">
+                <i class="bi bi-people-fill tab-icon"></i>PEE / PER
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="fcp-tab" data-bs-toggle="tab" data-bs-target="#fcp" type="button" role="tab" aria-controls="fcp" aria-selected="false">
+                <i class="bi bi-building tab-icon"></i>FCP
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="metadonneesTabsContent">
+        
+        <!-- ========== ONGLET PEE/PER ========== -->
+        <div class="tab-pane fade show active" id="pee-per" role="tabpanel" aria-labelledby="pee-per-tab">
+            
+            <!-- Stats Cards PEE/PER -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary-light">
+                            <i class="bi bi-receipt text-primary"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ total_sicav|default:"0" }}</h3>
+                            <p class="stat-label">Transactions Totales</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success-light">
+                            <i class="bi bi-briefcase text-success"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ total_pee|default:"0" }}</h3>
+                            <p class="stat-label">Transactions PEE</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info-light">
+                            <i class="bi bi-piggy-bank text-info"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ total_per|default:"0" }}</h3>
+                            <p class="stat-label">Transactions PER</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info-light">
+                            <i class="bi bi-person-badge text-info"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ clients_uniques|default:"0" }}</h3>
+                            <p class="stat-label">Clients Uniques</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions PEE/PER List -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Transactions PEE/PER</h5>
+                            <div>
+                                <a href="{% url 'reporting:exporter_sicav' %}" class="btn btn-sm btn-outline-success me-2">
+                                    <i class="bi bi-download me-1"></i>Exporter CSV
+                                </a>
+                                <a href="{% url 'reporting:telecharger_modele_sicav' %}" class="btn btn-sm btn-outline-info me-2">
+                                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>Modèle Excel
+                                </a>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportSicav">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Importer Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtres -->
+                            <div class="row mb-3 px-3">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtreSens" onchange="filtrerSicav()">
+                                        <option value="">Tous les sens</option>
+                                        {% for sens in sens_options %}
+                                            <option value="{{ sens }}">{{ sens|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtreFcpSicav" onchange="filtrerSicav()">
+                                        <option value="">Tous les FCP</option>
+                                        {% for fcp in fcp_sicav %}
+                                            <option value="{{ fcp }}">{{ fcp }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control form-control-sm" id="rechercheSicav" placeholder="Rechercher (nom, compte...)" oninput="filtrerSicav()">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="resetFiltreSicav()">
+                                        <i class="bi bi-x-circle me-1"></i>Réinitialiser
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                                <table class="table table-hover table-sm mb-0" id="tableSicav">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>N° Compte</th>
+                                            <th>Nom PER/PEE</th>
+                                            <th>Nom & Prénom</th>
+                                            <th>FCP</th>
+                                            <th>Sens</th>
+                                            <th class="text-end">Quantité</th>
+                                            <th class="text-end">CMP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if transactions_recentes %}
+                                            {% for t in transactions_recentes %}
+                                            <tr data-sens="{{ t.sens|default:'' }}" data-fcp="{{ t.nom_fcp|default:'' }}">
+                                                <td>{% if t.date_transaction %}{{ t.date_transaction|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                                                <td>{{ t.numero_compte|default:"-" }}</td>
+                                                <td>{{ t.nom_per_pee|default:"-" }}</td>
+                                                <td>{{ t.nom_prenom|default:"-" }}</td>
+                                                <td>{{ t.nom_fcp|default:"-" }}</td>
+                                                <td>
+                                                    {% if t.sens == "souscription" %}
+                                                        <span class="badge bg-primary">Souscription</span>
+                                                    {% elif t.sens == "rachat" %}
+                                                        <span class="badge bg-secondary">Rachat</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">{% if t.quantite %}{{ t.quantite|floatformat:4 }}{% else %}-{% endif %}</td>
+                                                <td class="text-end">{% if t.cmp_calcule %}{{ t.cmp_calcule|floatformat:4 }}{% elif t.cout_moyen_pondere %}{{ t.cout_moyen_pondere|floatformat:4 }}{% else %}-{% endif %}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                        <tr id="noDataRowSicav">
+                                            <td colspan="8" class="text-center text-muted py-5">
+                                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                                Aucune transaction PEE/PER enregistrée
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if transactions_recentes and total_sicav > 20 %}
+                            <div class="text-center mt-3 text-muted">
+                                <small>Affichage des 20 dernières transactions sur {{ total_sicav }} au total</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== ONGLET FCP ========== -->
+        <div class="tab-pane fade" id="fcp" role="tabpanel" aria-labelledby="fcp-tab">
+            
+            <!-- Stats Cards FCP -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary-light">
+                            <i class="bi bi-building text-primary"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ total_fcp|default:"0" }}</h3>
+                            <p class="stat-label">FCP Enregistrés</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success-light">
+                            <i class="bi bi-moon-stars text-success"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ fcp_islamiques|default:"0" }}</h3>
+                            <p class="stat-label">FCP Islamiques</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info-light">
+                            <i class="bi bi-calendar-check text-info"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-value">{{ total_vl|default:"0" }}</h3>
+                            <p class="stat-label">VL Enregistrées</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FCP List -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Liste des FCP</h5>
+                            <div>
+                                <a href="{% url 'reporting:exporter_fcp' %}" class="btn btn-sm btn-outline-success me-2">
+                                    <i class="bi bi-download me-1"></i>Exporter CSV
+                                </a>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportExcel" onclick="setImportType('fcp')">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Importer Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th>Nom du FCP</th>
+                                            <th>FCP Islamique</th>
+                                            <th>Catégorie</th>
+                                            <th>Type de fond</th>
+                                            <th>Échelle de risque</th>
+                                            <th>Horizon (ans)</th>
+                                            <th>Benchmark Obligataire</th>
+                                            <th>Benchmark BRVMC</th>
+                                            <th>Date de création</th>
+                                            <th>Dépositaire</th>
+                                            <th>Frais gestion TTC</th>
+                                            <th>Frais entrée TTC</th>
+                                            <th>Frais sortie TTC</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if fcps %}
+                                            {% for fcp in fcps %}
+                                            <tr>
+                                                <td class="text-nowrap">{{ fcp.nom_fcp }}</td>
+                                                <td>
+                                                    {% if fcp.est_fcp_islamique %}
+                                                        <span class="badge bg-success">Oui</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Non</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ fcp.categorie_fond|default:"-"|title }}</td>
+                                                <td>{{ fcp.type_fond|default:"-"|title }}</td>
+                                                <td class="text-center">{{ fcp.echelle_risque|default:"-" }}</td>
+                                                <td class="text-center">{{ fcp.horizon_investissement|default:"-" }}</td>
+                                                <td class="text-center">{% if fcp.benchmark_obligataire %}{{ fcp.benchmark_obligataire_pct }}%{% else %}-{% endif %}</td>
+                                                <td class="text-center">{% if fcp.benchmark_brvmc %}{{ fcp.benchmark_brvmc_pct }}%{% else %}-{% endif %}</td>
+                                                <td>{% if fcp.date_creation %}{{ fcp.date_creation|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                                                <td>{{ fcp.depositaire|default:"-" }}</td>
+                                                <td class="text-center">{{ fcp.frais_gestion_ttc|default:"-" }}</td>
+                                                <td class="text-center">{{ fcp.frais_entree_ttc|default:"-" }}</td>
+                                                <td class="text-center">{{ fcp.frais_sortie_ttc|default:"-" }}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="ouvrirModalEdition('{{ fcp.nom_fcp|escapejs }}')" title="Modifier">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="14" class="text-center text-muted py-5">
+                                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                                Aucun FCP enregistré
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Valeurs Liquidatives -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-currency-exchange me-2"></i>Valeurs Liquidatives</h5>
+                            <div>
+                                <a href="{% url 'reporting:exporter_vl' %}" class="btn btn-sm btn-outline-success me-2">
+                                    <i class="bi bi-download me-1"></i>Exporter CSV
+                                </a>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportExcel" onclick="setImportType('vl')">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Importer Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if derniere_date %}
+                            <div class="alert alert-info py-2 mb-3">
+                                <i class="bi bi-calendar-check me-2"></i>
+                                <strong>Date affichée :</strong> {{ derniere_date|date:"d/m/Y" }} 
+                                <span class="text-muted">({{ valeurs_liquidatives|length }} valeurs)</span>
+                            </div>
+                            {% endif %}
+                            <div class="row mb-3 px-3">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtreCategorie" onchange="updateFiltresFcp()">
+                                        <option value="">Toutes les catégories</option>
+                                        {% for cat in categories %}
+                                            <option value="{{ cat }}">{{ cat|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtreTypeFond" onchange="updateFiltresFcp()">
+                                        <option value="">Tous les types</option>
+                                        {% for type in types_fonds %}
+                                            <option value="{{ type }}">{{ type|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtreFcp">
+                                        <option value="">Tous les FCP</option>
+                                        {% for nom in noms_fcp %}
+                                            <option value="{{ nom }}">{{ nom }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control form-control-sm" id="rechercheVL" placeholder="Rechercher...">
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="resetFiltreVL()">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-sm mb-0" id="tableVL">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>FCP</th>
+                                            <th>Valeur Liquidative</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if valeurs_liquidatives %}
+                                            {% for vl in valeurs_liquidatives %}
+                                            <tr data-fcp="{{ vl.nom_fcp }}" data-date="{{ vl.date|date:'Y-m-d' }}" data-categorie="{{ vl.categorie_fond|default:'' }}" data-type="{{ vl.type_fond|default:'' }}">
+                                                <td>{{ vl.date|date:"d/m/Y" }}</td>
+                                                <td>{{ vl.nom_fcp }}</td>
+                                                <td>{{ vl.valeur_liquidative|floatformat:4 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                        <tr id="noDataRow">
+                                            <td colspan="3" class="text-center text-muted py-5">
+                                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                                Aucune valeur liquidative enregistrée
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import Excel FCP/VL -->
+<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportExcelLabel">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Importer depuis Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Étape 1: Sélection du fichier -->
+                <div id="step1">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Formats supportés :</strong> Excel (.xlsx, .xls)<br>
+                        <span id="formatInfo"></span>
+                    </div>
+                    <form id="formAnalyse" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="typeImport" name="type" value="vl">
+                        <div class="mb-3">
+                            <label for="fichierExcel" class="form-label">Fichier Excel</label>
+                            <input type="file" class="form-control" id="fichierExcel" name="fichier" accept=".xlsx,.xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btnAnalyser">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <i class="bi bi-search me-1"></i>Analyser le fichier
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Étape 2: Prévisualisation -->
+                <div id="step2" class="d-none">
+                    <div class="alert alert-success mb-3">
+                        <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Analyse terminée</h6>
+                        <div id="analyseSummary"></div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <i class="bi bi-plus-circle me-2"></i>Nouvelles entrées
+                                    <span class="badge bg-light text-success float-end" id="countNouveaux">0</span>
+                                </div>
+                                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                                    <ul class="list-group list-group-flush" id="listeNouveaux"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <i class="bi bi-arrow-repeat me-2"></i>Entrées existantes
+                                    <span class="badge bg-light text-dark float-end" id="countExistants">0</span>
+                                </div>
+                                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                                    <ul class="list-group list-group-flush" id="listeExistants"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="bi bi-gear me-2"></i>Options d'import
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="modeImport" id="modeNouveaux" value="nouveaux_seulement" checked>
+                                <label class="form-check-label" for="modeNouveaux">
+                                    <strong>Importer uniquement les nouvelles entrées</strong><br>
+                                    <small class="text-muted">Les données existantes ne seront pas modifiées</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modeImport" id="modeEcraser" value="tout_ecraser">
+                                <label class="form-check-label" for="modeEcraser">
+                                    <strong>Écraser toutes les données</strong><br>
+                                    <small class="text-muted">Les données existantes seront mises à jour</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="retourStep1()">
+                            <i class="bi bi-arrow-left me-1"></i>Retour
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnExecuterImport">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <i class="bi bi-check-lg me-1"></i>Valider et importer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Étape 3: Résultat -->
+                <div id="step3" class="d-none">
+                    <div id="resultImport"></div>
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualiser la page
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import Excel SICAV (PEE/PER) -->
+<div class="modal fade" id="modalImportSicav" tabindex="-1" aria-labelledby="modalImportSicavLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportSicavLabel">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Importer les transactions PEE/PER
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Étape 1: Sélection du fichier -->
+                <div id="stepSicav1">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Formats supportés :</strong> Excel (.xlsx, .xls)<br>
+                        <small>
+                            <strong>Colonnes obligatoires :</strong> Date Transaction, Numéro Compte, Type Plan (PEE/PER), Sens, Nom FCP, Quantité.<br>
+                            <strong>Colonnes recommandées :</strong> Nom PER/PEE, Nom &amp; Prénom.<br>
+                            <strong>Optionnelles :</strong> Matricule, Email, <em>VL Transaction</em> (calculée automatiquement depuis les VL des FCP si absente).
+                        </small>
+                        <hr class="my-2">
+                        <a href="{% url 'reporting:telecharger_modele_sicav' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download me-1"></i>Télécharger le modèle Excel
+                        </a>
+                    </div>
+                    <form id="formAnalyseSicav" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="fichierSicav" class="form-label">Fichier Excel</label>
+                            <input type="file" class="form-control" id="fichierSicav" name="fichier" accept=".xlsx,.xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btnAnalyserSicav">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <i class="bi bi-search me-1"></i>Analyser le fichier
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Étape 2: Prévisualisation -->
+                <div id="stepSicav2" class="d-none">
+                    <div class="alert alert-success mb-3">
+                        <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Analyse terminée</h6>
+                        <div id="analyseSummarySicav"></div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <i class="bi bi-plus-circle me-2"></i>Nouvelles transactions
+                                    <span class="badge bg-light text-success float-end" id="countNouveauxSicav">0</span>
+                                </div>
+                                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                                    <ul class="list-group list-group-flush" id="listeNouveauxSicav"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <i class="bi bi-arrow-repeat me-2"></i>Transactions existantes
+                                    <span class="badge bg-light text-dark float-end" id="countExistantsSicav">0</span>
+                                </div>
+                                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                                    <ul class="list-group list-group-flush" id="listeExistantsSicav"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="bi bi-gear me-2"></i>Options d'import
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="modeImportSicav" id="modeNouveauxSicav" value="nouveaux_seulement" checked>
+                                <label class="form-check-label" for="modeNouveauxSicav">
+                                    <strong>Importer uniquement les nouvelles transactions</strong><br>
+                                    <small class="text-muted">Les transactions existantes ne seront pas modifiées</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modeImportSicav" id="modeEcraserSicav" value="tout_ecraser">
+                                <label class="form-check-label" for="modeEcraserSicav">
+                                    <strong>Écraser toutes les données</strong><br>
+                                    <small class="text-muted">Les transactions existantes seront mises à jour</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="retourStepSicav1()">
+                            <i class="bi bi-arrow-left me-1"></i>Retour
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnExecuterImportSicav">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <i class="bi bi-check-lg me-1"></i>Valider et importer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Étape 3: Résultat -->
+                <div id="stepSicav3" class="d-none">
+                    <div id="resultImportSicav"></div>
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualiser la page
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Édition FCP -->
+<div class="modal fade" id="modalEditionFcp" tabindex="-1" aria-labelledby="modalEditionFcpLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditionFcpLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Modifier le FCP
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditionFcp">
+                    <input type="hidden" id="editNomFcpOriginal" name="nom_fcp_original">
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editNomFcp" class="form-label fw-bold">Nom du FCP</label>
+                            <input type="text" class="form-control" id="editNomFcp" name="nom_fcp" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editCategorie" class="form-label">Catégorie</label>
+                            <select class="form-select" id="editCategorie" name="categorie_fond">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="prudent">Prudent</option>
+                                <option value="equilibré">Équilibré</option>
+                                <option value="dynamique">Dynamique</option>
+                                <option value="diversifie">Diversifié</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editTypeFond" class="form-label">Type de fond</label>
+                            <select class="form-select" id="editTypeFond" name="type_fond">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="actions">Actions</option>
+                                <option value="obligataire">Obligataire</option>
+                                <option value="diversifié">Diversifié</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="editIslamique" class="form-label">FCP Islamique</label>
+                            <select class="form-select" id="editIslamique" name="est_fcp_islamique">
+                                <option value="false">Non</option>
+                                <option value="true">Oui</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="editEchelleRisque" class="form-label">Échelle de risque</label>
+                            <select class="form-select" id="editEchelleRisque" name="echelle_risque">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="1">1 - Très faible</option>
+                                <option value="2">2 - Faible</option>
+                                <option value="3">3 - Modéré faible</option>
+                                <option value="4">4 - Modéré</option>
+                                <option value="5">5 - Modéré élevé</option>
+                                <option value="6">6 - Élevé</option>
+                                <option value="7">7 - Très élevé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="editHorizon" class="form-label">Horizon (années)</label>
+                            <input type="number" class="form-control" id="editHorizon" name="horizon_investissement" min="1" max="30">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="editDateCreation" class="form-label">Date de création</label>
+                            <input type="date" class="form-control" id="editDateCreation" name="date_creation">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editDepositaire" class="form-label">Dépositaire</label>
+                            <input type="text" class="form-control" id="editDepositaire" name="depositaire">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Benchmarks (doivent totaliser 100%)</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <label for="editBenchmarkOblig" class="form-label">Benchmark Obligataire (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editBenchmarkOblig" name="benchmark_obligataire" 
+                                       step="0.01" min="0" max="100" onchange="validerBenchmarks()">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="editBenchmarkBrvmc" class="form-label">Benchmark BRVMC (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editBenchmarkBrvmc" name="benchmark_brvmc"
+                                       step="0.01" min="0" max="100" onchange="validerBenchmarks()">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div id="benchmarkTotal" class="alert alert-info py-1 px-2 mb-0 w-100 text-center">
+                                <small>Total: <strong>0%</strong></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="benchmarkAlert" class="alert alert-danger d-none mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        La somme des benchmarks doit être égale à 100%
+                    </div>
+                    
+                    <hr>
+                    <h6 class="mb-3"><i class="bi bi-cash me-2"></i>Frais</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="editFraisGestion" class="form-label">Frais de gestion TTC</label>
+                            <input type="text" class="form-control" id="editFraisGestion" name="frais_gestion_ttc" placeholder="Ex: 1.5% TTC">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editFraisEntree" class="form-label">Frais d'entrée TTC</label>
+                            <input type="text" class="form-control" id="editFraisEntree" name="frais_entree_ttc" placeholder="Ex: Néant">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editFraisSortie" class="form-label">Frais de sortie TTC</label>
+                            <input type="text" class="form-control" id="editFraisSortie" name="frais_sortie_ttc" placeholder="Ex: 500 FCFA">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btnSauvegarderFcp" onclick="sauvegarderFcp()">
+                    <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    <i class="bi bi-check-lg me-1"></i>Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Données FCP pour édition
+const fcpsData = {{ fcps_json|safe }};
+
+let currentType = 'vl';
+let currentFile = null;
+let analyseResult = null;
+let currentFileSicav = null;
+let analyseResultSicav = null;
+
+// ========== Fonctions Filtrage SICAV ==========
+
+function filtrerSicav() {
+    const sensFiltre = document.getElementById('filtreSens').value.toLowerCase();
+    const fcpFiltre = document.getElementById('filtreFcpSicav').value.toLowerCase();
+    const recherche = document.getElementById('rechercheSicav').value.toLowerCase();
+    const rows = document.querySelectorAll('#tableSicav tbody tr[data-sens]');
+    
+    rows.forEach(row => {
+        const rowSens = (row.getAttribute('data-sens') || '').toLowerCase();
+        const rowFcp = (row.getAttribute('data-fcp') || '').toLowerCase();
+        const rowText = row.textContent.toLowerCase();
+        
+        let show = true;
+        
+        if (sensFiltre && rowSens !== sensFiltre) show = false;
+        if (fcpFiltre && rowFcp !== fcpFiltre) show = false;
+        if (recherche && !rowText.includes(recherche)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function resetFiltreSicav() {
+    document.getElementById('filtreSens').value = '';
+    document.getElementById('filtreFcpSicav').value = '';
+    document.getElementById('rechercheSicav').value = '';
+    const rows = document.querySelectorAll('#tableSicav tbody tr[data-sens]');
+    rows.forEach(row => row.style.display = '');
+}
+
+// ========== Fonctions Import SICAV ==========
+
+function retourStepSicav1() {
+    document.getElementById('stepSicav1').classList.remove('d-none');
+    document.getElementById('stepSicav2').classList.add('d-none');
+    document.getElementById('stepSicav3').classList.add('d-none');
+    document.getElementById('fichierSicav').value = '';
+    analyseResultSicav = null;
+    
+    // Effacer les avertissements
+    const avertContainer = document.getElementById('avertissementsSicav');
+    if (avertContainer) {
+        avertContainer.innerHTML = '';
+    }
+}
+
+document.getElementById('formAnalyseSicav').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('fichierSicav');
+    if (!fileInput.files.length) {
+        alert('Veuillez sélectionner un fichier');
+        return;
+    }
+    
+    currentFileSicav = fileInput.files[0];
+    
+    const btn = document.getElementById('btnAnalyserSicav');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const formData = new FormData();
+    formData.append('fichier', currentFileSicav);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch("{% url 'reporting:analyser_sicav_excel' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        
+        if (data.success) {
+            analyseResultSicav = data;
+            afficherPreviewSicav(data);
+            document.getElementById('stepSicav1').classList.add('d-none');
+            document.getElementById('stepSicav2').classList.remove('d-none');
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        alert('Erreur de communication avec le serveur');
+        console.error(error);
+    });
+});
+
+function afficherPreviewSicav(data) {
+    let summary = `<strong>Total:</strong> ${data.total} transactions trouvées<br>`;
+    summary += `<strong>Nouvelles:</strong> ${data.count_nouveaux} | <strong>Existantes:</strong> ${data.count_existants}`;
+    
+    // Ajouter les stats de flux si disponibles
+    if (data.stats) {
+        const formatMontant = (val) => new Intl.NumberFormat('fr-FR').format(val) + ' FCFA';
+        summary += `<hr class="my-2"><small>`;
+        summary += `<i class="bi bi-arrow-up-circle text-success me-1"></i>Souscriptions: ${formatMontant(data.stats.total_souscriptions)}<br>`;
+        summary += `<i class="bi bi-arrow-down-circle text-danger me-1"></i>Rachats: ${formatMontant(data.stats.total_rachats)}<br>`;
+        const soldeClass = data.stats.solde_net >= 0 ? 'text-success' : 'text-danger';
+        summary += `<strong class="${soldeClass}">Solde net: ${formatMontant(data.stats.solde_net)}</strong>`;
+        summary += `</small>`;
+    }
+    
+    document.getElementById('analyseSummarySicav').innerHTML = summary;
+    document.getElementById('countNouveauxSicav').textContent = data.count_nouveaux;
+    document.getElementById('countExistantsSicav').textContent = data.count_existants;
+    
+    // Afficher les avertissements s'il y en a
+    let avertissementsHtml = '';
+    if (data.avertissements && data.avertissements.length > 0) {
+        // Mapping type -> style + icône
+        const styleMap = {
+            'colonnes_manquantes': { cls: 'alert-danger', icon: 'x-octagon' },
+            'fcp_inconnus':        { cls: 'alert-danger', icon: 'x-circle' },
+            'quantite_invalide':   { cls: 'alert-danger', icon: 'exclamation-octagon' },
+            'date_invalide':       { cls: 'alert-danger', icon: 'calendar-x' },
+            'date_future':         { cls: 'alert-warning', icon: 'calendar-event' },
+            'sens_invalide':       { cls: 'alert-warning', icon: 'arrow-left-right' },
+            'type_plan_invalide':  { cls: 'alert-warning', icon: 'tag' },
+            'rachat_orphelin':     { cls: 'alert-warning', icon: 'cart-x' },
+            'desequilibre_flux':   { cls: 'alert-warning', icon: 'exclamation-triangle' },
+        };
+
+        data.avertissements.forEach(avert => {
+            const style = styleMap[avert.type] || { cls: 'alert-warning', icon: 'exclamation-triangle' };
+            const alertClass = style.cls;
+            const icon = style.icon;
+
+            avertissementsHtml += `<div class="alert ${alertClass} mb-3">`;
+            avertissementsHtml += `<h6 class="alert-heading mb-2"><i class="bi bi-${icon} me-2"></i>${avert.message}</h6>`;
+
+            if (avert.type === 'fcp_inconnus' && Array.isArray(avert.details)) {
+                avertissementsHtml += `<div class="mb-2">`;
+                avert.details.forEach(fcp => {
+                    avertissementsHtml += `<span class="badge bg-danger me-1 mb-1">${fcp}</span>`;
+                });
+                avertissementsHtml += `</div>`;
+                
+                // Afficher la liste des FCP valides pour aider l'utilisateur
+                if (data.fcps_existants && data.fcps_existants.length > 0) {
+                    avertissementsHtml += `<details class="mt-2">`;
+                    avertissementsHtml += `<summary class="small text-muted" style="cursor:pointer"><i class="bi bi-eye me-1"></i>Voir les FCP disponibles</summary>`;
+                    avertissementsHtml += `<div class="mt-2 p-2 bg-light rounded">`;
+                    data.fcps_existants.forEach(fcp => {
+                        avertissementsHtml += `<span class="badge bg-success me-1 mb-1">${fcp}</span>`;
+                    });
+                    avertissementsHtml += `</div></details>`;
+                }
+            } else if (avert.type === 'desequilibre_flux' && avert.details) {
+                const formatMontant = (val) => new Intl.NumberFormat('fr-FR').format(val) + ' FCFA';
+                avertissementsHtml += `<small>`;
+                avertissementsHtml += `Souscriptions: ${formatMontant(avert.details.souscriptions)}<br>`;
+                avertissementsHtml += `Rachats: ${formatMontant(avert.details.rachats)}<br>`;
+                avertissementsHtml += `Différence: <span class="text-danger">${formatMontant(avert.details.difference)}</span>`;
+                avertissementsHtml += `</small>`;
+            } else if (avert.type === 'rachat_orphelin' && Array.isArray(avert.details)) {
+                avertissementsHtml += `<div class="small"><ul class="mb-0 ps-3">`;
+                avert.details.forEach(d => {
+                    avertissementsHtml += `<li>Ligne ${d.ligne} — ${d.compte} / ${d.fcp} : ${d.quantite_demandee} parts demandées, ${d.stock_disponible} disponibles</li>`;
+                });
+                avertissementsHtml += `</ul></div>`;
+            } else if (Array.isArray(avert.details) && avert.details.length) {
+                // Affichage générique : liste de lignes ou de valeurs
+                avertissementsHtml += `<div class="mb-2">`;
+                avert.details.forEach(d => {
+                    const label = (typeof d === 'number') ? `Ligne ${d}` : String(d);
+                    avertissementsHtml += `<span class="badge bg-secondary me-1 mb-1">${label}</span>`;
+                });
+                avertissementsHtml += `</div>`;
+            }
+
+            if (avert.suggestion) {
+                avertissementsHtml += `<hr class="my-2"><small class="text-muted"><i class="bi bi-lightbulb me-1"></i>${avert.suggestion}</small>`;
+            }
+
+            avertissementsHtml += `</div>`;
+        });
+    }
+    
+    // Insérer les avertissements avant les cards
+    const cardsContainer = document.querySelector('#stepSicav2 .row.mb-3');
+    let avertContainer = document.getElementById('avertissementsSicav');
+    if (!avertContainer) {
+        avertContainer = document.createElement('div');
+        avertContainer.id = 'avertissementsSicav';
+        cardsContainer.parentNode.insertBefore(avertContainer, cardsContainer);
+    }
+    avertContainer.innerHTML = avertissementsHtml;
+    
+    // Liste des nouveaux
+    const listeNouveaux = document.getElementById('listeNouveauxSicav');
+    listeNouveaux.innerHTML = '';
+    
+    if (data.nouveaux && data.nouveaux.length > 0) {
+        data.nouveaux.slice(0, 20).forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small';
+            // Mettre en évidence les FCP non reconnus
+            const fcpBadge = item.fcp_existe === false 
+                ? `<span class="badge bg-danger ms-1" title="FCP non trouvé dans la base">${item.nom_fcp}</span>`
+                : item.nom_fcp;
+            li.innerHTML = `${item.date_transaction} - ${item.nom_prenom || item.numero_compte} - ${fcpBadge}`;
+            listeNouveaux.appendChild(li);
+        });
+        if (data.count_nouveaux > 20) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small text-muted';
+            li.textContent = `... et ${data.count_nouveaux - 20} autres`;
+            listeNouveaux.appendChild(li);
+        }
+    } else {
+        listeNouveaux.innerHTML = '<li class="list-group-item text-muted small">Aucune nouvelle transaction</li>';
+    }
+    
+    // Liste des existants
+    const listeExistants = document.getElementById('listeExistantsSicav');
+    listeExistants.innerHTML = '';
+    
+    if (data.existants && data.existants.length > 0) {
+        data.existants.slice(0, 20).forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small';
+            const fcpBadge = item.fcp_existe === false 
+                ? `<span class="badge bg-danger ms-1" title="FCP non trouvé dans la base">${item.nom_fcp}</span>`
+                : item.nom_fcp;
+            li.innerHTML = `${item.date_transaction} - ${item.nom_prenom || item.numero_compte} - ${fcpBadge}`;
+            listeExistants.appendChild(li);
+        });
+        if (data.count_existants > 20) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small text-muted';
+            li.textContent = `... et ${data.count_existants - 20} autres`;
+            listeExistants.appendChild(li);
+        }
+    } else {
+        listeExistants.innerHTML = '<li class="list-group-item text-muted small">Aucune transaction existante</li>';
+    }
+}
+
+document.getElementById('btnExecuterImportSicav').addEventListener('click', function() {
+    if (!currentFileSicav) {
+        alert('Aucun fichier sélectionné');
+        return;
+    }
+    
+    const mode = document.querySelector('input[name="modeImportSicav"]:checked').value;
+    
+    const btn = this;
+    const spinner = btn.querySelector('.spinner-border');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const formData = new FormData();
+    formData.append('fichier', currentFileSicav);
+    formData.append('mode', mode);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch("{% url 'reporting:executer_import_sicav_excel' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        
+        const resultDiv = document.getElementById('resultImportSicav');
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h5><i class="bi bi-check-circle me-2"></i>Import réussi!</h5>
+                    <p class="mb-0">${data.message}</p>
+                    <hr>
+                    <ul class="mb-0">
+                        <li><strong>Importées:</strong> ${data.importes}</li>
+                        <li><strong>Mises à jour:</strong> ${data.modifies}</li>
+                        <li><strong>Ignorées:</strong> ${data.ignores}</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-circle me-2"></i>Erreur</h5>
+                    <p class="mb-0">${data.message}</p>
+                </div>
+            `;
+        }
+        
+        document.getElementById('stepSicav2').classList.add('d-none');
+        document.getElementById('stepSicav3').classList.remove('d-none');
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        alert('Erreur de communication avec le serveur');
+        console.error(error);
+    });
+});
+
+document.getElementById('modalImportSicav').addEventListener('hidden.bs.modal', function() {
+    retourStepSicav1();
+});
+
+// ========== Fonctions d'édition FCP ==========
+
+function ouvrirModalEdition(nomFcp) {
+    const fcp = fcpsData.find(f => f.nom_fcp === nomFcp);
+    if (!fcp) {
+        alert('FCP non trouvé: ' + nomFcp);
+        return;
+    }
+    
+    document.getElementById('editNomFcpOriginal').value = fcp.nom_fcp;
+    document.getElementById('editNomFcp').value = fcp.nom_fcp;
+    document.getElementById('editCategorie').value = fcp.categorie_fond || '';
+    document.getElementById('editTypeFond').value = fcp.type_fond || '';
+    document.getElementById('editIslamique').value = fcp.est_fcp_islamique ? 'true' : 'false';
+    document.getElementById('editEchelleRisque').value = fcp.echelle_risque || '';
+    document.getElementById('editHorizon').value = fcp.horizon_investissement || '';
+    document.getElementById('editDateCreation').value = fcp.date_creation || '';
+    document.getElementById('editDepositaire').value = fcp.depositaire || '';
+    
+    let benchOblig = fcp.benchmark_obligataire_num;
+    let benchBrvmc = fcp.benchmark_brvmc_num;
+    if (benchOblig !== null && benchOblig !== undefined && benchOblig <= 1) benchOblig = benchOblig * 100;
+    if (benchBrvmc !== null && benchBrvmc !== undefined && benchBrvmc <= 1) benchBrvmc = benchBrvmc * 100;
+    document.getElementById('editBenchmarkOblig').value = (benchOblig !== null && benchOblig !== undefined) ? benchOblig.toFixed(2) : '';
+    document.getElementById('editBenchmarkBrvmc').value = (benchBrvmc !== null && benchBrvmc !== undefined) ? benchBrvmc.toFixed(2) : '';
+    
+    document.getElementById('editFraisGestion').value = fcp.frais_gestion_ttc || '';
+    document.getElementById('editFraisEntree').value = fcp.frais_entree_ttc || '';
+    document.getElementById('editFraisSortie').value = fcp.frais_sortie_ttc || '';
+    
+    validerBenchmarks();
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEditionFcp'));
+    modal.show();
+}
+
+function validerBenchmarks() {
+    const benchObligVal = document.getElementById('editBenchmarkOblig').value;
+    const benchBrvmcVal = document.getElementById('editBenchmarkBrvmc').value;
+    
+    if (!benchObligVal && !benchBrvmcVal) {
+        const totalDiv = document.getElementById('benchmarkTotal');
+        const alertDiv = document.getElementById('benchmarkAlert');
+        totalDiv.innerHTML = `<small>Total: <strong>-</strong></small>`;
+        totalDiv.classList.remove('alert-danger');
+        totalDiv.classList.add('alert-info');
+        alertDiv.classList.add('d-none');
+        return true;
+    }
+    
+    const benchOblig = parseFloat(benchObligVal) || 0;
+    const benchBrvmc = parseFloat(benchBrvmcVal) || 0;
+    const total = benchOblig + benchBrvmc;
+    
+    const totalDiv = document.getElementById('benchmarkTotal');
+    const alertDiv = document.getElementById('benchmarkAlert');
+    
+    totalDiv.innerHTML = `<small>Total: <strong>${total.toFixed(1)}%</strong></small>`;
+    
+    if (Math.abs(total - 100) <= 1) {
+        totalDiv.classList.remove('alert-danger');
+        totalDiv.classList.add('alert-success');
+        alertDiv.classList.add('d-none');
+        return true;
+    } else {
+        totalDiv.classList.remove('alert-success');
+        totalDiv.classList.add('alert-danger');
+        alertDiv.classList.remove('d-none');
+        return false;
+    }
+}
+
+function sauvegarderFcp() {
+    if (!validerBenchmarks()) {
+        alert('La somme des benchmarks doit être égale à 100%');
+        return;
+    }
+    
+    const btn = document.getElementById('btnSauvegarderFcp');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const benchOblig = parseFloat(document.getElementById('editBenchmarkOblig').value) || null;
+    const benchBrvmc = parseFloat(document.getElementById('editBenchmarkBrvmc').value) || null;
+    
+    const data = {
+        nom_fcp_original: document.getElementById('editNomFcpOriginal').value,
+        nom_fcp: document.getElementById('editNomFcp').value,
+        categorie_fond: document.getElementById('editCategorie').value,
+        type_fond: document.getElementById('editTypeFond').value,
+        est_fcp_islamique: document.getElementById('editIslamique').value === 'true',
+        echelle_risque: document.getElementById('editEchelleRisque').value || null,
+        horizon_investissement: document.getElementById('editHorizon').value || null,
+        date_creation: document.getElementById('editDateCreation').value || null,
+        depositaire: document.getElementById('editDepositaire').value,
+        benchmark_obligataire: benchOblig !== null ? (benchOblig / 100).toFixed(4) : null,
+        benchmark_brvmc: benchBrvmc !== null ? (benchBrvmc / 100).toFixed(4) : null,
+        frais_gestion_ttc: document.getElementById('editFraisGestion').value || null,
+        frais_entree_ttc: document.getElementById('editFraisEntree').value || null,
+        frais_sortie_ttc: document.getElementById('editFraisSortie').value || null,
+    };
+    
+    fetch("{% url 'reporting:modifier_fcp' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        
+        if (result.success) {
+            alert(result.message);
+            window.location.reload();
+        } else {
+            alert('Erreur: ' + result.message);
+        }
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        alert('Erreur de communication avec le serveur');
+        console.error(error);
+    });
+}
+
+// ========== Fonctions d'import FCP/VL ==========
+
+function setImportType(type) {
+    currentType = type;
+    document.getElementById('typeImport').value = type;
+    
+    const formatInfo = document.getElementById('formatInfo');
+    if (type === 'fcp') {
+        formatInfo.innerHTML = 'Pour les FCP: Colonnes attendues incluant "Nom du FCP", "Catégorie", "Type de fond", "FCP islamique", etc.';
+        document.getElementById('modalImportExcelLabel').innerHTML = '<i class="bi bi-file-earmark-excel me-2"></i>Importer les métadonnées FCP';
+    } else {
+        formatInfo.innerHTML = 'Pour les VL: Format pivot (Date en lignes, FCP en colonnes) ou liste (Date, Nom FCP, Valeur Liquidative)';
+        document.getElementById('modalImportExcelLabel').innerHTML = '<i class="bi bi-file-earmark-excel me-2"></i>Importer les Valeurs Liquidatives';
+    }
+    
+    retourStep1();
+}
+
+function retourStep1() {
+    document.getElementById('step1').classList.remove('d-none');
+    document.getElementById('step2').classList.add('d-none');
+    document.getElementById('step3').classList.add('d-none');
+    document.getElementById('fichierExcel').value = '';
+    analyseResult = null;
+}
+
+document.getElementById('formAnalyse').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('fichierExcel');
+    if (!fileInput.files.length) {
+        alert('Veuillez sélectionner un fichier');
+        return;
+    }
+    
+    currentFile = fileInput.files[0];
+    
+    const btn = document.getElementById('btnAnalyser');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const formData = new FormData();
+    formData.append('fichier', currentFile);
+    formData.append('type', currentType);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch("{% url 'reporting:analyser_excel' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        
+        if (data.success) {
+            analyseResult = data;
+            afficherPreview(data);
+            document.getElementById('step1').classList.add('d-none');
+            document.getElementById('step2').classList.remove('d-none');
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        alert('Erreur de communication avec le serveur');
+        console.error(error);
+    });
+});
+
+function afficherPreview(data) {
+    let summary = `<strong>Total:</strong> ${data.total} entrées trouvées<br>`;
+    summary += `<strong>Nouvelles:</strong> ${data.count_nouveaux} | <strong>Existantes:</strong> ${data.count_existants}`;
+    
+    if (data.format) {
+        summary += `<br><strong>Format détecté:</strong> ${data.format}`;
+    }
+    if (data.fcps) {
+        summary += `<br><strong>FCP:</strong> ${data.fcps.length}`;
+    }
+    if (data.dates_uniques) {
+        summary += ` | <strong>Dates:</strong> ${data.dates_uniques}`;
+    }
+    
+    document.getElementById('analyseSummary').innerHTML = summary;
+    document.getElementById('countNouveaux').textContent = data.count_nouveaux;
+    document.getElementById('countExistants').textContent = data.count_existants;
+    
+    const listeNouveaux = document.getElementById('listeNouveaux');
+    listeNouveaux.innerHTML = '';
+    
+    if (data.nouveaux && data.nouveaux.length > 0) {
+        data.nouveaux.slice(0, 20).forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small';
+            if (data.type === 'vl') {
+                li.textContent = `${item.date} - ${item.nom_fcp}: ${item.valeur_liquidative.toFixed(4)}`;
+            } else {
+                li.textContent = `${item.nom_fcp}`;
+            }
+            listeNouveaux.appendChild(li);
+        });
+        if (data.count_nouveaux > 20) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small text-muted';
+            li.textContent = `... et ${data.count_nouveaux - 20} autres`;
+            listeNouveaux.appendChild(li);
+        }
+    } else {
+        listeNouveaux.innerHTML = '<li class="list-group-item text-muted small">Aucune nouvelle entrée</li>';
+    }
+    
+    const listeExistants = document.getElementById('listeExistants');
+    listeExistants.innerHTML = '';
+    
+    if (data.existants && data.existants.length > 0) {
+        data.existants.slice(0, 20).forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small';
+            if (data.type === 'vl') {
+                li.textContent = `${item.date} - ${item.nom_fcp}: ${item.valeur_liquidative.toFixed(4)}`;
+            } else {
+                li.textContent = `${item.nom_fcp}`;
+            }
+            listeExistants.appendChild(li);
+        });
+        if (data.count_existants > 20) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 small text-muted';
+            li.textContent = `... et ${data.count_existants - 20} autres`;
+            listeExistants.appendChild(li);
+        }
+    } else {
+        listeExistants.innerHTML = '<li class="list-group-item text-muted small">Aucune entrée existante</li>';
+    }
+}
+
+document.getElementById('btnExecuterImport').addEventListener('click', function() {
+    if (!currentFile) {
+        alert('Aucun fichier sélectionné');
+        return;
+    }
+    
+    const mode = document.querySelector('input[name="modeImport"]:checked').value;
+    
+    const btn = this;
+    const spinner = btn.querySelector('.spinner-border');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const formData = new FormData();
+    formData.append('fichier', currentFile);
+    formData.append('type', currentType);
+    formData.append('mode', mode);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch("{% url 'reporting:executer_import_excel' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        
+        const resultDiv = document.getElementById('resultImport');
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h5><i class="bi bi-check-circle me-2"></i>Import réussi!</h5>
+                    <p class="mb-0">${data.message}</p>
+                    <hr>
+                    <ul class="mb-0">
+                        <li><strong>Importés:</strong> ${data.importes}</li>
+                        <li><strong>Mis à jour:</strong> ${data.modifies}</li>
+                        <li><strong>Ignorés:</strong> ${data.ignores}</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-circle me-2"></i>Erreur</h5>
+                    <p class="mb-0">${data.message}</p>
+                </div>
+            `;
+        }
+        
+        document.getElementById('step2').classList.add('d-none');
+        document.getElementById('step3').classList.remove('d-none');
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+        alert('Erreur de communication avec le serveur');
+        console.error(error);
+    });
+});
+
+// Filtrage des VL
+function filtrerVL() {
+    const categorieFiltre = document.getElementById('filtreCategorie').value.toLowerCase();
+    const typeFiltre = document.getElementById('filtreTypeFond').value.toLowerCase();
+    const fcpFiltre = document.getElementById('filtreFcp').value.toLowerCase();
+    const recherche = document.getElementById('rechercheVL').value.toLowerCase();
+    const rows = document.querySelectorAll('#tableVL tbody tr[data-fcp]');
+    
+    rows.forEach(row => {
+        const rowFcp = row.getAttribute('data-fcp').toLowerCase();
+        const rowCategorie = (row.getAttribute('data-categorie') || '').toLowerCase();
+        const rowType = (row.getAttribute('data-type') || '').toLowerCase();
+        
+        let show = true;
+        
+        if (categorieFiltre && rowCategorie !== categorieFiltre) show = false;
+        if (typeFiltre && rowType !== typeFiltre) show = false;
+        if (fcpFiltre && rowFcp !== fcpFiltre) show = false;
+        if (recherche && !rowFcp.includes(recherche)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function updateFiltresFcp() {
+    const categorieFiltre = document.getElementById('filtreCategorie').value.toLowerCase();
+    const typeFiltre = document.getElementById('filtreTypeFond').value.toLowerCase();
+    const fcpSelect = document.getElementById('filtreFcp');
+    const rows = document.querySelectorAll('#tableVL tbody tr[data-fcp]');
+    
+    const fcpsVisibles = new Set();
+    rows.forEach(row => {
+        const rowFcp = row.getAttribute('data-fcp');
+        const rowCategorie = (row.getAttribute('data-categorie') || '').toLowerCase();
+        const rowType = (row.getAttribute('data-type') || '').toLowerCase();
+        
+        let match = true;
+        if (categorieFiltre && rowCategorie !== categorieFiltre) match = false;
+        if (typeFiltre && rowType !== typeFiltre) match = false;
+        
+        if (match) fcpsVisibles.add(rowFcp);
+    });
+    
+    const currentValue = fcpSelect.value;
+    Array.from(fcpSelect.options).forEach((option, index) => {
+        if (index === 0) return;
+        option.style.display = fcpsVisibles.has(option.value) ? '' : 'none';
+        option.disabled = !fcpsVisibles.has(option.value);
+    });
+    
+    if (currentValue && !fcpsVisibles.has(currentValue)) {
+        fcpSelect.value = '';
+    }
+    
+    filtrerVL();
+}
+
+function resetFiltreVL() {
+    document.getElementById('filtreCategorie').value = '';
+    document.getElementById('filtreTypeFond').value = '';
+    document.getElementById('filtreFcp').value = '';
+    document.getElementById('rechercheVL').value = '';
+    
+    const fcpSelect = document.getElementById('filtreFcp');
+    Array.from(fcpSelect.options).forEach(option => {
+        option.style.display = '';
+        option.disabled = false;
+    });
+    
+    const rows = document.querySelectorAll('#tableVL tbody tr[data-fcp]');
+    rows.forEach(row => row.style.display = '');
+}
+
+// Événements
+document.getElementById('filtreFcp').addEventListener('change', filtrerVL);
+document.getElementById('rechercheVL').addEventListener('input', filtrerVL);
+
+document.getElementById('modalImportExcel').addEventListener('hidden.bs.modal', function() {
+    retourStep1();
+});
+</script>
+{% endblock %}

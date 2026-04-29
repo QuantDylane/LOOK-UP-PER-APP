@@ -1,0 +1,671 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Client - Reporting{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-person-fill me-2"></i>Dashboard - Analyse Client
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-client">
+
+    <!-- ===== Filtres ===== -->
+    <div class="dashboard-filters card shadow-sm mb-3">
+        <div class="card-body py-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label mb-1 small text-muted">Recherche client</label>
+                    <input type="text" class="form-control form-control-sm" id="searchGlobal" placeholder="Nom, n° compte ou email...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Date début</label>
+                    <input type="date" class="form-control form-control-sm" id="dateDebut" value="{{ date_debut_defaut }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Date fin</label>
+                    <input type="date" class="form-control form-control-sm" id="dateFin" value="{{ date_fin_defaut }}">
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-light text-dark border" id="perfPeriode">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== KPIs Clientèle ===== -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="kpi-card kpi-primary">
+                <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Clients</div>
+                    <div class="kpi-value">{{ total_clients }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card kpi-success">
+                <div class="kpi-icon"><i class="bi bi-briefcase-fill"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Plans</div>
+                    <div class="kpi-value">{{ total_plans }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card kpi-info">
+                <div class="kpi-icon"><i class="bi bi-arrow-left-right"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Transactions</div>
+                    <div class="kpi-value">{{ total_transactions }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <!-- ===== Liste clients ===== -->
+        <div class="col-lg-3">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Clients</h6>
+                    <span class="badge bg-primary" id="clientsCount">{{ total_clients }}</span>
+                </div>
+                <div class="card-body p-0" style="max-height: 600px; overflow-y:auto;">
+                    <div class="list-group list-group-flush" id="clientsList">
+                        {% for client in clients %}
+                        <a href="#" class="list-group-item list-group-item-action client-item"
+                           data-numero="{{ client.numero_compte }}"
+                           data-nom="{{ client.nom_prenom }}"
+                           data-email="{{ client.email }}"
+                           data-plan="{{ client.nom_per_pee }}"
+                           onclick="selectClient('{{ client.numero_compte }}')">
+                            <div class="fw-semibold">{{ client.nom_prenom|default:client.numero_compte }}</div>
+                            <small class="text-muted d-block">{{ client.numero_compte }}</small>
+                            <small class="text-muted">{{ client.nom_per_pee|default:'-' }} • {{ client.nb_transactions }} tr.</small>
+                        </a>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Aucun client trouvé
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Panneau client ===== -->
+        <div class="col-lg-9">
+            <!-- Placeholder -->
+            <div class="card dashboard-card" id="clientPlaceholder">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-person-circle fs-1 text-muted d-block mb-3"></i>
+                    <h5 class="text-muted">Sélectionnez un client</h5>
+                    <p class="text-muted mb-0">Cliquez sur un client dans la liste pour afficher son dashboard personnalisé.</p>
+                </div>
+            </div>
+
+            <!-- Contenu dynamique -->
+            <div id="clientDashboard" style="display:none;">
+                <!-- Header client -->
+                <div class="card dashboard-card mb-3">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h5 class="mb-1" id="clientNom">-</h5>
+                                <small class="text-muted">
+                                    <i class="bi bi-credit-card me-1"></i><span id="clientCompte">-</span>
+                                    &nbsp;•&nbsp;
+                                    <i class="bi bi-envelope me-1"></i><span id="clientEmail">-</span>
+                                </small>
+                            </div>
+                            <div class="col-md-5 text-md-end">
+                                <span class="badge bg-primary" id="clientPlan">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs performance client -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div class="perf-kpi">
+                            <div class="perf-kpi-label">Valeur actuelle</div>
+                            <div class="perf-kpi-value" id="valeurActuelle">-</div>
+                            <div class="perf-kpi-sub text-muted">à la date de fin</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="perf-kpi">
+                            <div class="perf-kpi-label">Coût d'acquisition</div>
+                            <div class="perf-kpi-value" id="coutAcquisition">-</div>
+                            <div class="perf-kpi-sub text-muted">cumul net des apports</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="perf-kpi">
+                            <div class="perf-kpi-label">Plus-value latente</div>
+                            <div class="perf-kpi-value" id="plusValue">-</div>
+                            <div class="perf-kpi-sub text-muted">Valeur - Coût</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="perf-kpi">
+                            <div class="perf-kpi-label">Performance</div>
+                            <div class="perf-kpi-value">
+                                <span id="perfSimpleClient">-</span>
+                                <small class="text-muted">/</small>
+                                <span id="perfModifieeClient">-</span>
+                            </div>
+                            <div class="perf-kpi-sub text-muted">Dietz Simple / Modifiée</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-8">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-header bg-white">
+                                <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Évolution de la valeur du portefeuille</h6>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:260px;position:relative;">
+                                    <canvas id="chartClientEvolution"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-header bg-white">
+                                <h6 class="mb-0"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Allocation FCP</h6>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:260px;position:relative;">
+                                    <canvas id="chartClientAllocation"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-8">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-header bg-white">
+                                <h6 class="mb-0"><i class="bi bi-bar-chart me-2 text-primary"></i>Flux mensuels : souscriptions vs rachats</h6>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:220px;position:relative;">
+                                    <canvas id="chartClientFlux"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-header bg-white">
+                                <h6 class="mb-0"><i class="bi bi-bullseye me-2 text-primary"></i>Performance par FCP</h6>
+                            </div>
+                            <div class="card-body">
+                                <div style="height:220px;position:relative;">
+                                    <canvas id="chartClientFcpPerf"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglets FCP détail / Historique -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#detailFcpTab" type="button" role="tab">
+                            <i class="bi bi-table me-1"></i>Détail FCP
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#historiqueTab" type="button" role="tab"
+                                onclick="chargerHistorique()">
+                            <i class="bi bi-clock-history me-1"></i>Historique
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 rounded-bottom p-3 bg-white">
+                    <!-- Tab: Détail FCP -->
+                    <div class="tab-pane fade show active" id="detailFcpTab" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>FCP</th>
+                                        <th class="text-end">Quantité</th>
+                                        <th class="text-end">VL</th>
+                                        <th class="text-end">Valeur</th>
+                                        <th class="text-end">Coût</th>
+                                        <th class="text-end">Plus/Moins-value</th>
+                                        <th class="text-end">Perf %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fcpDetailsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Historique -->
+                    <div class="tab-pane fade" id="historiqueTab" role="tabpanel">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="filtreHistSens">
+                                    <option value="">Tous les sens</option>
+                                    <option value="souscription">Souscriptions</option>
+                                    <option value="rachat">Rachats</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="filtreHistFcp">
+                                    <option value="">Tous les FCP</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="date" class="form-control" id="filtreHistDateDebut">
+                                    <span class="input-group-text">à</span>
+                                    <input type="date" class="form-control" id="filtreHistDateFin">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-sm btn-primary w-100" onclick="chargerHistorique()">
+                                    <i class="bi bi-funnel me-1"></i>Filtrer
+                                </button>
+                            </div>
+                        </div>
+                        <div style="max-height: 450px; overflow-y:auto;">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th style="width:40px;"></th>
+                                        <th>Date / FCP</th>
+                                        <th>Sens</th>
+                                        <th class="text-end">Quantité</th>
+                                        <th class="text-end">VL</th>
+                                        <th class="text-end">CMP</th>
+                                        <th class="text-end">Écart</th>
+                                        <th class="text-end">Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historiqueTableBody">
+                                    <tr><td colspan="8" class="text-center text-muted py-4">Chargement...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.dashboard-client { padding-top: 0.5rem; }
+
+.kpi-card {
+    background: #fff;
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06));
+    border: 1px solid rgba(10,35,66,0.06);
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 4px 12px rgba(10,35,66,0.08)); }
+.kpi-icon {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+}
+.kpi-primary .kpi-icon { background: rgba(10,35,66,0.08);  color: var(--blue-900,#0A2342); }
+.kpi-success .kpi-icon { background: rgba(30,76,130,0.10); color: var(--blue-700,#1E4C82); }
+.kpi-info    .kpi-icon { background: rgba(44,82,130,0.12); color: var(--blue-600,#2C5282); }
+
+.kpi-card .kpi-label { font-size: 0.8rem; color: var(--text-muted,#7B8794); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+.kpi-card .kpi-value { font-size: 1.75rem; font-weight: 700; color: var(--primary-color,#0A2342); line-height: 1.1; font-family: 'Cambria', 'Georgia', 'Times New Roman', serif; }
+
+.perf-kpi {
+    background: linear-gradient(135deg, #fff 0%, var(--bg-tertiary,#F5F7FA) 100%);
+    border-left: 4px solid var(--accent-color,#1E4C82);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06));
+    height: 100%;
+}
+.perf-kpi-label { font-size: 0.75rem; color: var(--text-muted,#7B8794); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.perf-kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--primary-color,#0A2342); line-height: 1.3; font-family: 'Cambria', 'Georgia', 'Times New Roman', serif; margin-top: 0.25rem; }
+.perf-kpi-sub { font-size: 0.75rem; margin-top: 0.25rem; }
+
+.dashboard-card { border: 1px solid rgba(10,35,66,0.06); box-shadow: var(--shadow-sm, 0 1px 2px rgba(10,35,66,0.06)); background: #fff; }
+.dashboard-card .card-header { border-bottom: 1px solid rgba(10,35,66,0.06); padding: 0.75rem 1rem; background: #fff; }
+.dashboard-card .card-header h6 { font-family: 'Cambria', 'Georgia', serif; font-weight: 600; font-size: 0.95rem; color: var(--primary-color); }
+
+.client-item.active {
+    background-color: var(--primary-color,#0A2342) !important;
+    color: white !important;
+}
+.client-item.active .text-muted { color: rgba(255,255,255,0.8) !important; }
+
+/* Cascade history */
+.cascade-parent { background-color: var(--gray-100,#F5F7FA); font-weight: 600; cursor: pointer; }
+.cascade-parent:hover { background-color: var(--gray-200,#E4E7EB); }
+.cascade-child { background-color: white; }
+.cascade-child td:first-child { padding-left: 30px !important; }
+.cascade-toggle { transition: transform 0.2s; }
+.cascade-toggle.collapsed { transform: rotate(-90deg); }
+
+/* Charte : texte positif/négatif en nuances de bleu/gris */
+.dashboard-client .text-success { color: var(--blue-700, #1E4C82) !important; }
+.dashboard-client .text-danger  { color: var(--gray-700, #3E4C59) !important; }
+</style>
+
+<script>
+let selectedClient = null;
+let clientFcps = [];
+let chartClientEvolution = null, chartClientAllocation = null, chartClientFlux = null, chartClientFcpPerf = null;
+// Palette charte : uniquement bleus et gris
+const PALETTE = ['#0A2342', '#1E4C82', '#2C5282', '#3A6CA8', '#6B8FBF', '#A7BED9', '#52606D', '#7B8794', '#9AA5B1', '#CBD2D9'];
+const COLOR_POSITIVE = '#1E4C82';
+const COLOR_NEGATIVE = '#7B8794';
+const COLOR_PRIMARY = '#0A2342';
+
+function formatNumber(num, digits=2) {
+    if (num === null || num === undefined) return '-';
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(num);
+}
+
+function formatMontant(val) {
+    if (val === null || val === undefined) return '-';
+    if (Math.abs(val) >= 1_000_000) return (val / 1_000_000).toFixed(2) + ' M FCFA';
+    if (Math.abs(val) >= 1_000)     return (val / 1_000).toFixed(0) + ' K FCFA';
+    return formatNumber(val) + ' FCFA';
+}
+
+function formatPct(val) {
+    if (val === null || val === undefined) return '<span class="text-muted">-</span>';
+    const color = val >= 0 ? 'text-success' : 'text-danger';
+    const sign = val >= 0 ? '+' : '';
+    return `<span class="${color} fw-bold">${sign}${formatNumber(val)}%</span>`;
+}
+
+function formatMontantColor(val) {
+    if (val === null || val === undefined) return '-';
+    const color = val >= 0 ? 'text-success' : 'text-danger';
+    const sign = val >= 0 ? '+' : '';
+    return `<span class="${color} fw-bold">${sign}${formatMontant(val)}</span>`;
+}
+
+function filtrerClients() {
+    const q = (document.getElementById('searchGlobal').value || '').toLowerCase();
+    const items = document.querySelectorAll('.client-item');
+    let n = 0;
+    items.forEach(item => {
+        const nom = (item.dataset.nom || '').toLowerCase();
+        const numero = (item.dataset.numero || '').toLowerCase();
+        const email = (item.dataset.email || '').toLowerCase();
+        const ok = !q || nom.includes(q) || numero.includes(q) || email.includes(q);
+        item.style.display = ok ? '' : 'none';
+        if (ok) n++;
+    });
+    document.getElementById('clientsCount').textContent = n;
+}
+
+function selectClient(numero) {
+    selectedClient = numero;
+    document.querySelectorAll('.client-item').forEach(it => {
+        it.classList.toggle('active', it.dataset.numero === numero);
+    });
+    chargerDetailsClient();
+    chargerEvolutionClient();
+}
+
+function chargerDetailsClient() {
+    if (!selectedClient) return;
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+
+    document.getElementById('clientPlaceholder').style.display = 'none';
+    document.getElementById('clientDashboard').style.display = '';
+
+    fetch(`/api/client/${encodeURIComponent(selectedClient)}/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+
+            document.getElementById('perfPeriode').textContent = `${data.date_debut} → ${data.date_fin}`;
+            document.getElementById('clientNom').textContent = data.client.nom_prenom || data.client.numero_compte;
+            document.getElementById('clientCompte').textContent = data.client.numero_compte;
+            document.getElementById('clientEmail').textContent = data.client.email || '-';
+            document.getElementById('clientPlan').textContent = data.client.nom_per_pee || '-';
+
+            document.getElementById('valeurActuelle').textContent = formatMontant(data.valeur_totale);
+            document.getElementById('coutAcquisition').textContent = formatMontant(data.cout_acquisition);
+            document.getElementById('plusValue').innerHTML = formatMontantColor(data.plus_value);
+            document.getElementById('perfSimpleClient').innerHTML = formatPct(data.perf_simple);
+            document.getElementById('perfModifieeClient').innerHTML = formatPct(data.perf_modifiee);
+
+            // Table
+            const tbody = document.getElementById('fcpDetailsTable');
+            tbody.innerHTML = data.fcp_details.length === 0
+                ? '<tr><td colspan="7" class="text-center text-muted py-3">Aucune position</td></tr>'
+                : data.fcp_details.map(f => `
+                    <tr>
+                        <td>${f.nom_fcp}</td>
+                        <td class="text-end">${formatNumber(f.quantite, 4)}</td>
+                        <td class="text-end">${formatNumber(f.vl_actuelle)}</td>
+                        <td class="text-end">${formatMontant(f.valeur)}</td>
+                        <td class="text-end">${formatMontant(f.cout_acquisition)}</td>
+                        <td class="text-end ${f.plus_value >= 0 ? 'text-success' : 'text-danger'}">${formatMontant(f.plus_value)}</td>
+                        <td class="text-end">${formatPct(f.perf_pct)}</td>
+                    </tr>`).join('');
+
+            // Store FCPs for history filter
+            clientFcps = data.fcp_details.map(f => f.nom_fcp);
+            const selectFcp = document.getElementById('filtreHistFcp');
+            selectFcp.innerHTML = '<option value="">Tous les FCP</option>' +
+                clientFcps.map(f => `<option value="${f}">${f}</option>`).join('');
+
+            // Donut allocation
+            if (chartClientAllocation) chartClientAllocation.destroy();
+            chartClientAllocation = new Chart(document.getElementById('chartClientAllocation').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.fcp_details.map(f => f.nom_fcp),
+                    datasets: [{
+                        data: data.fcp_details.map(f => f.valeur),
+                        backgroundColor: data.fcp_details.map((_, i) => PALETTE[i % PALETTE.length]),
+                        borderWidth: 2, borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '55%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatMontant(ctx.parsed)}` } }
+                    }
+                }
+            });
+
+            // Perf par FCP (horizontal bar)
+            if (chartClientFcpPerf) chartClientFcpPerf.destroy();
+            chartClientFcpPerf = new Chart(document.getElementById('chartClientFcpPerf').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.fcp_details.map(f => f.nom_fcp),
+                    datasets: [{
+                        label: 'Performance (%)',
+                        data: data.fcp_details.map(f => f.perf_pct),
+                        backgroundColor: data.fcp_details.map(f => f.perf_pct >= 0 ? COLOR_POSITIVE : COLOR_NEGATIVE),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => `${formatNumber(ctx.parsed.x)}%` } }
+                    },
+                    scales: {
+                        x: { ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+}
+
+function chargerEvolutionClient() {
+    if (!selectedClient) return;
+    const dateDebut = document.getElementById('dateDebut').value;
+    const dateFin = document.getElementById('dateFin').value;
+    fetch(`/api/client/${encodeURIComponent(selectedClient)}/evolution/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+
+            // Courbe de valeur
+            if (chartClientEvolution) chartClientEvolution.destroy();
+            chartClientEvolution = new Chart(document.getElementById('chartClientEvolution').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: data.serie.map(s => s.label),
+                    datasets: [{
+                        label: 'Valeur du portefeuille',
+                        data: data.serie.map(s => s.valeur),
+                        borderColor: COLOR_PRIMARY,
+                        backgroundColor: 'rgba(10,35,66,0.08)',
+                        borderWidth: 2.5, tension: 0.3, fill: true,
+                        pointBackgroundColor: COLOR_POSITIVE, pointRadius: 3, pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => formatMontant(ctx.parsed.y) } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { ticks: { callback: v => formatMontant(v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                    }
+                }
+            });
+
+            // Flux
+            if (chartClientFlux) chartClientFlux.destroy();
+            chartClientFlux = new Chart(document.getElementById('chartClientFlux').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.serie.map(s => s.label),
+                    datasets: [
+                        { label: 'Souscriptions', data: data.serie.map(s => s.souscriptions), backgroundColor: COLOR_POSITIVE, borderRadius: 4, stack: 'flux' },
+                        { label: 'Rachats',       data: data.serie.map(s => -s.rachats),     backgroundColor: COLOR_NEGATIVE, borderRadius: 4, stack: 'flux' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatMontant(Math.abs(ctx.parsed.y))}` } }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, ticks: { callback: v => formatMontant(Math.abs(v)) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                    }
+                }
+            });
+        });
+}
+
+function chargerHistorique() {
+    if (!selectedClient) return;
+    const sens = document.getElementById('filtreHistSens').value;
+    const fcp = document.getElementById('filtreHistFcp').value;
+    const dateDebut = document.getElementById('filtreHistDateDebut').value;
+    const dateFin = document.getElementById('filtreHistDateFin').value;
+
+    let url = `/api/client/${encodeURIComponent(selectedClient)}/historique/?`;
+    if (sens) url += `sens=${sens}&`;
+    if (fcp) url += `fcp=${encodeURIComponent(fcp)}&`;
+    if (dateDebut) url += `date_debut=${dateDebut}&`;
+    if (dateFin) url += `date_fin=${dateFin}&`;
+
+    const tbody = document.getElementById('historiqueTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+
+    fetch(url).then(r => r.json()).then(data => {
+        if (data.error || !data.historique || data.historique.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Aucune transaction</td></tr>';
+            return;
+        }
+        let html = '';
+        data.historique.forEach((jour, idx) => {
+            const parentId = `date-${idx}`;
+            const total = jour.transactions.reduce((s, t) => s + t.montant, 0);
+            html += `
+                <tr class="cascade-parent" onclick="toggleCascade('${parentId}')">
+                    <td><i class="bi bi-chevron-down cascade-toggle" id="toggle-${parentId}"></i></td>
+                    <td colspan="6"><i class="bi bi-calendar-event me-2"></i><strong>${jour.date}</strong>
+                        <span class="badge bg-secondary ms-2">${jour.transactions.length} trans.</span></td>
+                    <td class="text-end fw-bold">${formatMontant(total)}</td>
+                </tr>`;
+            jour.transactions.forEach(t => {
+                const sensColor = t.sens === 'souscription' ? 'text-success' : 'text-danger';
+                const sensIcon = t.sens === 'souscription' ? 'bi-plus-circle' : 'bi-dash-circle';
+                const ecart = t.ecart_cmp_vl !== null
+                    ? `<span class="${t.ecart_cmp_vl >= 0 ? 'text-success' : 'text-danger'}">${t.ecart_cmp_vl >= 0 ? '+' : ''}${t.ecart_cmp_vl.toFixed(2)}%</span>`
+                    : '-';
+                html += `
+                    <tr class="cascade-child" data-parent="${parentId}">
+                        <td></td>
+                        <td>${t.nom_fcp}</td>
+                        <td><span class="${sensColor}"><i class="bi ${sensIcon} me-1"></i>${t.sens}</span></td>
+                        <td class="text-end">${formatNumber(t.quantite, 2)}</td>
+                        <td class="text-end">${t.vl_transaction ? formatNumber(t.vl_transaction) : '-'}</td>
+                        <td class="text-end">${formatNumber(t.cout_moyen_pondere)}</td>
+                        <td class="text-end">${ecart}</td>
+                        <td class="text-end">${formatMontant(t.montant)}</td>
+                    </tr>`;
+            });
+        });
+        tbody.innerHTML = html;
+    });
+}
+
+function toggleCascade(parentId) {
+    const children = document.querySelectorAll(`[data-parent="${parentId}"]`);
+    const toggle = document.getElementById(`toggle-${parentId}`);
+    children.forEach(c => { c.style.display = c.style.display === 'none' ? '' : 'none'; });
+    toggle.classList.toggle('collapsed');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('searchGlobal').addEventListener('input', filtrerClients);
+    document.getElementById('dateDebut').addEventListener('change', function() {
+        if (selectedClient) { chargerDetailsClient(); chargerEvolutionClient(); }
+    });
+    document.getElementById('dateFin').addEventListener('change', function() {
+        if (selectedClient) { chargerDetailsClient(); chargerEvolutionClient(); }
+    });
+
+    // Sélection via URL
+    const clientParam = new URLSearchParams(window.location.search).get('client');
+    if (clientParam) selectClient(clientParam);
+});
+</script>
+{% endblock %}

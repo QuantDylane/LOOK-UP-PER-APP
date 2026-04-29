@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PER/PEE Reporting{% endblock %}</title>
+
+    <!-- Theme init (avant rendu, evite le flash de fond clair en mode sombre) -->
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = stored || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) { /* localStorage indisponible : ignore */ }
+        })();
+    </script>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="wrapper d-flex">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <img src="{% static 'images/cgf.png' %}" alt="CGF Gestion" class="sidebar-logo">
+                </div>
+                <small class="text-muted">Reporting PER / PEE</small>
+            </div>
+
+            <ul class="sidebar-nav">
+                {% if user.is_superuser %}
+                <li class="nav-item">
+                    <a href="{% url 'admin:index' %}" class="nav-link {% if request.path == '/admin/' %}active{% endif %}">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>Site Admin</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'reporting:accueil' %}" class="nav-link {% if request.resolver_match.url_name == 'accueil' %}active{% endif %}">
+                        <i class="bi bi-house-fill"></i>
+                        <span>Accueil</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'reporting:analyse_pee_per' %}" class="nav-link {% if request.resolver_match.url_name == 'analyse_pee_per' %}active{% endif %}">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        <span>Analyse Plans</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'reporting:analyse_client' %}" class="nav-link {% if request.resolver_match.url_name == 'analyse_client' %}active{% endif %}">
+                        <i class="bi bi-person-fill"></i>
+                        <span>Analyse Client</span>
+                    </a>
+                </li>
+                {% if user.is_superuser %}
+                <li class="nav-item">
+                    <a href="{% url 'reporting:metadonnees' %}" class="nav-link {% if request.resolver_match.url_name == 'metadonnees' %}active{% endif %}">
+                        <i class="bi bi-database-fill"></i>
+                        <span>Métadonnées</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'reporting:controle' %}" class="nav-link {% if request.resolver_match.url_name == 'controle' %}active{% endif %}">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Contrôle</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'reporting:export' %}" class="nav-link {% if request.resolver_match.url_name == 'export' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                        <span>Exportation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'reporting:a_propos' %}" class="nav-link {% if request.resolver_match.url_name == 'a_propos' %}active{% endif %}">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>À propos</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                {% if user.is_authenticated %}
+                <div class="sidebar-user">
+                    <i class="bi bi-person-circle"></i>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</span>
+                        {% if user.is_superuser %}
+                        <small class="sidebar-user-role">Administrateur</small>
+                        {% else %}
+                        <small class="sidebar-user-role">Consultation</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <form method="post" action="{% url 'logout' %}" class="sidebar-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="sidebar-logout-btn">
+                        <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
+                    </button>
+                </form>
+                {% endif %}
+                <small class="d-block mt-2">© {% now "Y" %} CGF Gestion</small>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div id="content" class="content">
+            <!-- Top Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white top-navbar">
+                <div class="container-fluid">
+                    <button class="btn btn-link sidebar-toggle" type="button" id="sidebarToggle">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    
+                    <div class="navbar-brand">
+                        {% block page_title %}{% endblock %}
+                    </div>
+                    
+                    <div class="ms-auto d-flex align-items-center">
+                        <button type="button" id="themeToggle" class="theme-toggle"
+                                aria-label="Basculer le mode sombre" title="Basculer le mode sombre">
+                            <i class="bi bi-moon-stars-fill"></i>
+                            <i class="bi bi-sun-fill"></i>
+                        </button>
+                        <span class="text-muted me-3">
+                            <i class="bi bi-calendar3"></i>
+                            {% now "d F Y" %}
+                        </span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Page Content -->
+            <main class="main-content">
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Chart.js Date Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('content').classList.toggle('expanded');
+        });
+
+        // Theme toggle (clair / sombre) - persiste dans localStorage
+        (function () {
+            var btn = document.getElementById('themeToggle');
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                var current = document.documentElement.getAttribute('data-theme') || 'light';
+                var next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                try { localStorage.setItem('theme', next); } catch (e) { /* ignore */ }
+            });
+        })();
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
