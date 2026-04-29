@@ -1232,7 +1232,22 @@ def metadonnees(request):
     
     # Liste des noms de FCP pour le filtre
     noms_fcp = sorted(seen_fcps)
-    
+
+    # Dictionnaire de métadonnées FCP pour enrichir les VL affichées
+    fcp_meta_lookup = {f['nom_fcp']: f for f in fcps}
+
+    # Enrichir les VL de la dernière date avec les métadonnées FCP
+    # (les enregistrements VL importés en mode pivot n'ont pas toujours
+    #  les champs categorie_fond / type_fond renseignés)
+    if valeurs_liquidatives:
+        valeurs_liquidatives = list(valeurs_liquidatives)
+        for vl in valeurs_liquidatives:
+            meta = fcp_meta_lookup.get(vl.nom_fcp, {})
+            if not vl.categorie_fond:
+                vl.categorie_fond = meta.get('categorie_fond') or ''
+            if not vl.type_fond:
+                vl.type_fond = meta.get('type_fond') or ''
+
     # Listes pour les filtres par catégorie et type de fond
     categories = sorted(set(f['categorie_fond'] for f in fcps if f['categorie_fond']))
     types_fonds = sorted(set(f['type_fond'] for f in fcps if f['type_fond']))
@@ -1936,6 +1951,8 @@ def modifier_fcp(request):
         updated = ValeurLiquidative.objects.filter(nom_fcp=nom_fcp_original).update(**update_data)
         
         if updated > 0:
+            # Invalider le cache des métadonnées FCP
+            cache.delete("metadonnees_fcps_v1")
             if nom_fcp != nom_fcp_original:
                 return JsonResponse({
                     'success': True, 
@@ -1960,87 +1977,131 @@ def modifier_fcp(request):
 
 # ========== EXPORT FUNCTIONS ==========
 
+def _format_frais_export(value):
+    """Formate une valeur de frais pour l'export CSV."""
+    if value is None:
+        return ''
+    s = str(value).strip()
+    if not s:
+        return ''
+    s_lower = s.lower().replace('é', 'e').replace('è', 'e')
+    if s_lower in ('neant', 'néant'):
+        return 'Néant'
+    for marker in ('%', 'FCFA', 'HT', 'fcfa', 'ht'):
+        if marker in s:
+            return s
+    try:
+        v = float(s)
+    except (ValueError, TypeError):
+        return s or ''
+    if v == 0:
+        return 'Néant'
+    if 0 < v <= 1:
+        return f"{v * 100:.2f}%"
+    return f"{v:.0f} FCFA"
+
+
+def _format_benchmark_export(value):
+    """Formate un benchmark en % pour l'export (ex : 0.75 -> 75,00%)."""
+    if value is None:
+        return ''
+    s = str(value).strip()
+    if not s:
+        return ''
+    if '%' in s:
+        return s
+    try:
+        v = float(s)
+    except (ValueError, TypeError):
+        return s
+    # Si déjà > 1, c'est probablement déjà en %
+    if v > 1:
+        return f"{v:.2f}%".replace('.', ',')
+    return f"{v * 100:.2f}%".replace('.', ',')
+
+
 def exporter_fcp(request):
-    """Exporter les métadonnées des FCP en CSV"""
+    """Exporter la fiche signélatique des FCP (une ligne par FCP, enregistrement le plus récent)"""
     response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="fcp_metadonnees.csv"'
+    response['Content-Disposition'] = 'attachment; filename="fiche_signaletique_fcp.csv"'
     response.write('\ufeff')  # BOM pour Excel
-    
+
     writer = csv.writer(response, delimiter=';')
-    
-    # En-têtes
+
     writer.writerow([
-        'Nom du FCP', 'Catégorie', 'Type de fond', 'Est FCP Islamique',
-        'Horizon investissement (ans)', 'Frais gestion TTC (%)',
-        'Frais entrée TTC (%)', 'Frais sortie TTC (%)',
+        'Nom du FCP', 'Catégorie', 'Type de fond', 'FCP Islamique',
+        'Échelle de risque', 'Horizon investissement (ans)',
+        'Frais gestion TTC', 'Frais entrée TTC', 'Frais sortie TTC',
         'Date de création', 'Dépositaire',
-        'Benchmark Obligataire', 'Benchmark BRVMC'
+        'Benchmark Obligataire (%)', 'Benchmark BRVMC (%)'
     ])
-    
-    # Données - FCP uniques
-    fcps = ValeurLiquidative.objects.values(
-        'nom_fcp', 'categorie_fond', 'type_fond', 'est_fcp_islamique',
-        'horizon_investissement', 'frais_gestion_ttc', 'frais_entree_ttc',
-        'frais_sortie_ttc', 'date_creation', 'depositaire',
-        'benchmark_obligataire', 'benchmark_brvmc'
-    ).distinct().exclude(nom_fcp__isnull=True).exclude(nom_fcp='')
-    
-    for fcp in fcps:
+
+    # Une ligne par FCP (enregistrement le plus récent)
+    fcps_raw = ValeurLiquidative.objects.exclude(
+        nom_fcp__isnull=True
+    ).exclude(nom_fcp='').order_by('nom_fcp', '-date')
+
+    seen = set()
+    for fcp in fcps_raw:
+        if fcp.nom_fcp in seen:
+            continue
+        seen.add(fcp.nom_fcp)
         writer.writerow([
-            fcp['nom_fcp'] or '',
-            fcp['categorie_fond'] or '',
-            fcp['type_fond'] or '',
-            'Oui' if fcp['est_fcp_islamique'] else 'Non',
-            fcp['horizon_investissement'] or '',
-            fcp['frais_gestion_ttc'] or '',
-            fcp['frais_entree_ttc'] or '',
-            fcp['frais_sortie_ttc'] or '',
-            fcp['date_creation'].strftime('%d/%m/%Y') if fcp['date_creation'] else '',
-            fcp['depositaire'] or '',
-            fcp['benchmark_obligataire'] or '',
-            fcp['benchmark_brvmc'] or '',
+            fcp.nom_fcp or '',
+            (fcp.categorie_fond or '').title(),
+            (fcp.type_fond or '').title(),
+            'Oui' if fcp.est_fcp_islamique else 'Non',
+            fcp.echelle_risque or '',
+            fcp.horizon_investissement or '',
+            _format_frais_export(fcp.frais_gestion_ttc),
+            _format_frais_export(fcp.frais_entree_ttc),
+            _format_frais_export(fcp.frais_sortie_ttc),
+            fcp.date_creation.strftime('%d/%m/%Y') if fcp.date_creation else '',
+            fcp.depositaire or '',
+            _format_benchmark_export(fcp.benchmark_obligataire),
+            _format_benchmark_export(fcp.benchmark_brvmc),
         ])
-    
+
     return response
 
 
 def exporter_vl(request):
-    """Exporter les valeurs liquidatives en CSV"""
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="valeurs_liquidatives.csv"'
-    response.write('\ufeff')  # BOM pour Excel
-    
-    writer = csv.writer(response, delimiter=';')
-    
-    # En-têtes
-    writer.writerow([
-        'Date', 'Nom du FCP', 'Valeur Liquidative', 'Catégorie',
-        'Type de fond', 'Est FCP Islamique', 'Horizon investissement (ans)',
-        'Frais gestion TTC (%)', 'Frais entrée TTC (%)', 'Frais sortie TTC (%)',
-        'Date de création', 'Dépositaire', 'Benchmark Obligataire', 'Benchmark BRVMC'
-    ])
-    
-    # Données
-    valeurs = ValeurLiquidative.objects.all().order_by('-date')
-    
+    """Exporter l'historique des VL en format pivot : Date en ligne, un FCP par colonne."""
+    # Charger toutes les VL en mémoire
+    valeurs = ValeurLiquidative.objects.exclude(
+        nom_fcp__isnull=True
+    ).exclude(nom_fcp='').order_by('date', 'nom_fcp')
+
+    # Construire le pivot : {date: {nom_fcp: valeur}}
+    pivot = {}
+    fcps_set = set()
     for vl in valeurs:
-        writer.writerow([
-            vl.date.strftime('%d/%m/%Y') if vl.date else '',
-            vl.nom_fcp or '',
-            str(vl.valeur_liquidative).replace('.', ',') if vl.valeur_liquidative else '',
-            vl.categorie_fond or '',
-            vl.type_fond or '',
-            'Oui' if vl.est_fcp_islamique else 'Non',
-            vl.horizon_investissement or '',
-            str(vl.frais_gestion_ttc).replace('.', ',') if vl.frais_gestion_ttc else '',
-            str(vl.frais_entree_ttc).replace('.', ',') if vl.frais_entree_ttc else '',
-            str(vl.frais_sortie_ttc).replace('.', ',') if vl.frais_sortie_ttc else '',
-            vl.date_creation.strftime('%d/%m/%Y') if vl.date_creation else '',
-            vl.depositaire or '',
-            vl.benchmark_obligataire or '',
-            vl.benchmark_brvmc or '',
-        ])
-    
+        if not vl.date:
+            continue
+        pivot.setdefault(vl.date, {})[vl.nom_fcp] = vl.valeur_liquidative
+        fcps_set.add(vl.nom_fcp)
+
+    fcp_columns = sorted(fcps_set)
+    dates_sorted = sorted(pivot.keys())
+
+    output = io.StringIO()
+    output.write('\ufeff')  # BOM pour Excel
+    writer = csv.writer(output, delimiter=';')
+
+    # En-tête
+    writer.writerow(['Date'] + fcp_columns)
+
+    # Lignes
+    for d in dates_sorted:
+        row_data = pivot[d]
+        row = [d.strftime('%d/%m/%Y')]
+        for fcp in fcp_columns:
+            val = row_data.get(fcp)
+            row.append(str(val).replace('.', ',') if val is not None else '')
+        writer.writerow(row)
+
+    response = HttpResponse(output.getvalue(), content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="historique_valeurs_liquidatives.csv"'
     return response
 
 
@@ -2645,6 +2706,9 @@ def executer_import_fcp_excel(df, mode):
             ValeurLiquidative.objects.filter(nom_fcp=nom_fcp).update(**defaults)
             modifies += 1
     
+    # Invalider le cache des métadonnées FCP
+    cache.delete("metadonnees_fcps_v1")
+
     return JsonResponse({
         'success': True,
         'message': f'{importes} FCP importés, {modifies} mis à jour, {ignores} ignorés.',
@@ -2773,6 +2837,9 @@ def executer_import_vl_excel(df, mode):
 
     # Compléter les jours manquants après l'import (version bulk)
     fill_count = fill_missing_dates()
+
+    # Invalider le cache des métadonnées FCP
+    cache.delete("metadonnees_fcps_v1")
 
     return JsonResponse({
         'success': True,

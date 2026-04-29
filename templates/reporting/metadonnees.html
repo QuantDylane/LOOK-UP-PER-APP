@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load reporting_extras %}
 
 {% block title %}Métadonnées - Reporting{% endblock %}
 
@@ -329,9 +330,9 @@
                                                 <td class="text-center">{% if fcp.benchmark_brvmc %}{{ fcp.benchmark_brvmc_pct }}%{% else %}-{% endif %}</td>
                                                 <td>{% if fcp.date_creation %}{{ fcp.date_creation|date:"d/m/Y" }}{% else %}-{% endif %}</td>
                                                 <td>{{ fcp.depositaire|default:"-" }}</td>
-                                                <td class="text-center">{{ fcp.frais_gestion_ttc|default:"-" }}</td>
-                                                <td class="text-center">{{ fcp.frais_entree_ttc|default:"-" }}</td>
-                                                <td class="text-center">{{ fcp.frais_sortie_ttc|default:"-" }}</td>
+                                                <td class="text-center">{{ fcp.frais_gestion_ttc|format_frais }}</td>
+                                                <td class="text-center">{{ fcp.frais_entree_ttc|format_frais }}</td>
+                                                <td class="text-center">{{ fcp.frais_sortie_ttc|format_frais }}</td>
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary" onclick="ouvrirModalEdition('{{ fcp.nom_fcp|escapejs }}')" title="Modifier">
                                                         <i class="bi bi-pencil"></i>
@@ -416,7 +417,7 @@
                                 <table class="table table-hover table-sm mb-0" id="tableVL">
                                     <thead class="sticky-top bg-white">
                                         <tr>
-                                            <th>Date</th>
+                                            <th>Dernière date</th>
                                             <th>FCP</th>
                                             <th>Valeur Liquidative</th>
                                         </tr>
