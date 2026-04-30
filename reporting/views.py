@@ -1695,6 +1695,7 @@ def controle(request):
             'session_key': s.session_key,
             'expire_date': s.expire_date,
             'user': user_obj,
+            'ip_address': data.get('ip_address'),
         })
     nb_sessions_actives = sessions_actives_qs.count()
     nb_users_connectes_maintenant = len(user_ids_connectes)

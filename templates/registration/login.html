@@ -9,128 +9,502 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
         body {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .login-page {
             min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-page::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(52, 152, 219, 0.10) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50%     { transform: translate(-5%, -5%) scale(1.1); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%     { transform: translateY(-10px); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .login-container { position: relative; z-index: 10; }
+
+        /* Section gauche - Messages marketing */
+        .marketing-section {
+            color: #fff;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            animation: slideLeft 0.8s ease-out;
+        }
+
+        .main-message {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .main-message span {
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .segment-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.1rem 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            transition: all 0.3s ease;
+        }
+
+        .segment-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(10px);
+        }
+
+        .segment-card .icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1rem;
+            font-size: 1.3rem;
+            margin-right: 1rem;
+            color: #fff;
+            flex-shrink: 0;
         }
-        .login-wrapper {
-            width: 100%;
-            max-width: 420px;
+
+        .segment-card.per       .icon { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .segment-card.pee       .icon { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .segment-card.reporting .icon { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+
+        .segment-card h6 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #fff;
         }
-        .login-card {
-            background: #fff;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-lg);
-            padding: 2.5rem 2rem;
-        }
-        .login-logo {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 1.75rem;
-        }
-        .login-logo img {
-            max-width: 140px;
-            height: auto;
-            margin-bottom: 0.75rem;
-        }
-        .login-logo h1 {
-            font-family: 'Cambria', serif;
-            color: var(--primary-color);
-            font-size: 1.25rem;
+
+        .segment-card p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
             margin: 0;
         }
-        .login-logo small {
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.7rem;
-        }
-        .login-card .form-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-        .login-card .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            width: 100%;
-            padding: 0.65rem;
-            font-weight: 600;
-        }
-        .login-card .btn-primary:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
-        .login-footer {
-            text-align: center;
+
+        /* Encart KPI */
+        .kpi-container {
             margin-top: 1.5rem;
-            color: rgba(255,255,255,0.75);
-            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+        }
+
+        .kpi-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1.25rem;
+            text-align: center;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .kpi-item { text-align: center; }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.65);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.25rem;
+        }
+
+        /* Section droite - Formulaire */
+        .login-card {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.6s ease-out;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2ecc71, #3498db);
+            background-size: 200% 100%;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .logo-container {
+            animation: float 3s ease-in-out infinite;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 12px 20px;
+            border-radius: 14px;
+            display: inline-block;
+        }
+
+        .logo-container img {
+            height: 55px;
+            width: auto;
+            filter: brightness(1.1) contrast(1.1);
+        }
+
+        .login-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1a1a2e, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group .form-control {
+            height: 54px;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        .form-group .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+            background-color: #fff;
+        }
+
+        .form-group .form-control::placeholder { color: #94a3b8; }
+
+        .form-group .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.2rem;
+            z-index: 5;
+            transition: color 0.3s ease;
+        }
+
+        .form-group:focus-within .input-icon { color: #3498db; }
+
+        .btn-login {
+            height: 54px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            color: #fff;
+        }
+
+        .btn-login:hover::before { left: 100%; }
+
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            top: 0; left: 0;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(52, 152, 219, 0.10);
+            animation: floatShape 20s infinite;
+        }
+
+        .shape:nth-child(1) { width:  80px; height:  80px; top: 10%; left: 10%; animation-delay:   0s; }
+        .shape:nth-child(2) { width: 120px; height: 120px; top: 70%; left: 80%; animation-delay:  -5s; }
+        .shape:nth-child(3) { width:  60px; height:  60px; top: 80%; left: 20%; animation-delay: -10s; }
+        .shape:nth-child(4) { width: 100px; height: 100px; top: 20%; left: 85%; animation-delay: -15s; }
+
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25%      { transform: translate(20px, -20px) rotate(90deg); }
+            50%      { transform: translate(0, -40px) rotate(180deg); }
+            75%      { transform: translate(-20px, -20px) rotate(270deg); }
+        }
+
+        .error-alert {
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .warning-alert {
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25%      { transform: translateX(-5px); }
+            75%      { transform: translateX(5px); }
+        }
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 991px) {
+            .marketing-section { padding: 2rem; text-align: center; }
+            .main-message { font-size: 1.8rem; }
+            .segment-card:hover { transform: none; }
+            .kpi-container { margin-bottom: 2rem; }
         }
     </style>
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-card">
-            <div class="login-logo">
-                <img src="{% static 'images/cgf.png' %}" alt="CGF Gestion">
-                <h1>PER/PEE Reporting</h1>
-                <small>Espace professionnel</small>
-            </div>
-
-            {% if form.non_field_errors %}
-            <div class="alert alert-danger py-2 small mb-3">
-                <i class="bi bi-exclamation-triangle me-1"></i>
-                Identifiant ou mot de passe incorrect.
-            </div>
-            {% endif %}
-
-            {% if next and user.is_authenticated %}
-            <div class="alert alert-warning py-2 small mb-3">
-                <i class="bi bi-shield-lock me-1"></i>
-                Accès réservé. Connectez-vous avec un compte autorisé.
-            </div>
-            {% endif %}
-
-            <form method="post" novalidate>
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="id_username" class="form-label">
-                        <i class="bi bi-person me-1"></i>Identifiant
-                    </label>
-                    <input type="text"
-                           name="username"
-                           id="id_username"
-                           class="form-control"
-                           autocomplete="username"
-                           autofocus
-                           required>
-                </div>
-                <div class="mb-4">
-                    <label for="id_password" class="form-label">
-                        <i class="bi bi-lock me-1"></i>Mot de passe
-                    </label>
-                    <input type="password"
-                           name="password"
-                           id="id_password"
-                           class="form-control"
-                           autocomplete="current-password"
-                           required>
-                </div>
-                <input type="hidden" name="next" value="{{ next }}">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Se connecter
-                </button>
-            </form>
+    <div class="login-page d-flex align-items-center">
+        <!-- Formes flottantes décoratives -->
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
         </div>
-        <div class="login-footer">
-            © {% now "Y" %} CGF Gestion — Tous droits réservés
+
+        <div class="container-fluid login-container">
+            <div class="row min-vh-100 align-items-center justify-content-center">
+                <!-- Section Marketing (gauche) -->
+                <div class="col-lg-6 col-xl-5 d-none d-lg-block">
+                    <div class="marketing-section">
+                        <h1 class="main-message">
+                            Préparer l'avenir,<br>
+                            <span>piloter l'épargne</span>
+                        </h1>
+
+                        <div class="segment-card per d-flex align-items-center">
+                            <div class="icon"><i class="bi bi-piggy-bank"></i></div>
+                            <div>
+                                <h6>Plan Épargne Retraite (PER)</h6>
+                                <p>Sécurisez la retraite de vos collaborateurs</p>
+                            </div>
+                        </div>
+
+                        <div class="segment-card pee d-flex align-items-center">
+                            <div class="icon"><i class="bi bi-building"></i></div>
+                            <div>
+                                <h6>Plan Épargne Entreprise (PEE)</h6>
+                                <p>Une politique sociale qui valorise vos équipes</p>
+                            </div>
+                        </div>
+
+                        <div class="segment-card reporting d-flex align-items-center">
+                            <div class="icon"><i class="bi bi-graph-up-arrow"></i></div>
+                            <div>
+                                <h6>Reporting & Analyse</h6>
+                                <p>Suivi des valeurs liquidatives, encours et performances</p>
+                            </div>
+                        </div>
+
+                        <div class="kpi-container">
+                            <div class="kpi-title">
+                                <i class="bi bi-bar-chart-line me-2"></i>Pilotage en un coup d'œil
+                            </div>
+                            <div class="kpi-grid">
+                                <div class="kpi-item">
+                                    <div class="kpi-value">PER</div>
+                                    <div class="kpi-label">Retraite</div>
+                                </div>
+                                <div class="kpi-item">
+                                    <div class="kpi-value">PEE</div>
+                                    <div class="kpi-label">Entreprise</div>
+                                </div>
+                                <div class="kpi-item">
+                                    <div class="kpi-value">VL</div>
+                                    <div class="kpi-label">Valeurs Liq.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Formulaire (droite) -->
+                <div class="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+                    <div class="login-card">
+                        <div class="p-4 p-md-5">
+                            <div class="text-center mb-4">
+                                <div class="logo-container mb-3">
+                                    <img src="{% static 'images/cgf.png' %}" alt="CGF Gestion">
+                                </div>
+                                <h1 class="login-title mb-2">PER / PEE Reporting</h1>
+                                <p class="login-subtitle mb-0">Espace professionnel — Suivi &amp; Analyse</p>
+                            </div>
+
+                            <div class="d-lg-none text-center mb-4">
+                                <p class="text-muted fst-italic" style="font-size: 0.9rem;">
+                                    <i class="bi bi-quote me-1"></i>
+                                    Préparer l'avenir, piloter l'épargne
+                                </p>
+                            </div>
+
+                            {% if form.non_field_errors or form.errors %}
+                            <div class="alert error-alert py-3 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                    <span>Identifiant ou mot de passe incorrect.</span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if next and user.is_authenticated %}
+                            <div class="alert warning-alert py-3 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-shield-lock-fill me-2 fs-5"></i>
+                                    <span>Accès réservé. Connectez-vous avec un compte autorisé.</span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <form method="post" novalidate>
+                                {% csrf_token %}
+
+                                <div class="form-group">
+                                    <i class="bi bi-person input-icon"></i>
+                                    <input type="text"
+                                           name="username"
+                                           id="id_username"
+                                           class="form-control"
+                                           placeholder="Identifiant"
+                                           autocomplete="username"
+                                           autofocus
+                                           required>
+                                </div>
+
+                                <div class="form-group">
+                                    <i class="bi bi-lock input-icon"></i>
+                                    <input type="password"
+                                           name="password"
+                                           id="id_password"
+                                           class="form-control"
+                                           placeholder="Mot de passe"
+                                           autocomplete="current-password"
+                                           required>
+                                </div>
+
+                                <input type="hidden" name="next" value="{{ next }}">
+
+                                <button type="submit" class="btn btn-login w-100 mt-2">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                                    Se connecter
+                                </button>
+                            </form>
+
+                            <div class="text-center mt-4 pt-3 border-top">
+                                <small class="text-muted">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    Connexion sécurisée
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="footer-text text-center mt-4 mb-0">
+                        © {% now "Y" %} CGF Gestion — Tous droits réservés
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </body>
