@@ -1317,21 +1317,28 @@ def metadonnees(request):
         # Après rachat total, pos.cmp = 0 : on affiche alors la VL d'exécution
         t.cmp_calcule = pos.cmp if pos.cmp > 0 else (vl if vl > 0 else None)
 
-    # 20 dernières transactions (par date décroissante)
+    # Toutes les transactions (par date décroissante) — pas de troncature :
+    # le tableau côté template est filtrable, la pagination visuelle reste compacte.
     toutes_tx.sort(
         key=lambda t: (t.date_transaction or date.min, t.id or 0),
         reverse=True,
     )
-    transactions_recentes = toutes_tx[:20]
-    
+    transactions_recentes = toutes_tx
+
     # Types de plan pour filtre
     types_plan = ['PEE', 'PER']
     
     # Sens de transaction pour filtre
     sens_options = ['souscription', 'rachat']
     
-    # FCP disponibles dans Sicav
-    fcp_sicav = sorted(Sicav.objects.values_list('nom_fcp', flat=True).exclude(nom_fcp__isnull=True).exclude(nom_fcp='').distinct())
+    # FCP disponibles dans Sicav — déduplication Python avec strip() pour
+    # éliminer les doublons causés par des espaces parasites en base.
+    fcp_sicav = sorted(set(
+        v.strip() for v in
+        Sicav.objects.values_list('nom_fcp', flat=True)
+        .exclude(nom_fcp__isnull=True).exclude(nom_fcp='')
+        if v and v.strip()
+    ))
     
     context = {
         # Données FCP

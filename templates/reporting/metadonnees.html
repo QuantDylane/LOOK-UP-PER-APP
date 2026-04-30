@@ -223,9 +223,9 @@
                                     </tbody>
                                 </table>
                             </div>
-                            {% if transactions_recentes and total_sicav > 20 %}
+                            {% if transactions_recentes %}
                             <div class="text-center mt-3 text-muted">
-                                <small>Affichage des 20 dernières transactions sur {{ total_sicav }} au total</small>
+                                <small>{{ total_sicav }} transaction{{ total_sicav|pluralize }} affichée{{ total_sicav|pluralize }}</small>
                             </div>
                             {% endif %}
                         </div>
