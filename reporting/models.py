@@ -75,3 +75,41 @@ class ValeurLiquidative(models.Model):
 
     def __str__(self):
         return f"{self.nom_fcp} - {self.valeur_liquidative} ({self.date})"
+
+
+# ---------------------------------------------------------------------------
+# Audit des connexions
+# ---------------------------------------------------------------------------
+class LoginAudit(models.Model):
+    """Trace des evenements d'authentification (succes / echec / deconnexion)."""
+
+    EVENT_LOGIN_SUCCESS = "login_success"
+    EVENT_LOGIN_FAILED = "login_failed"
+    EVENT_LOGOUT = "logout"
+    EVENT_CHOICES = [
+        (EVENT_LOGIN_SUCCESS, "Connexion reussie"),
+        (EVENT_LOGIN_FAILED, "Echec de connexion"),
+        (EVENT_LOGOUT, "Deconnexion"),
+    ]
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    event = models.CharField(max_length=20, choices=EVENT_CHOICES, db_index=True)
+    username = models.CharField(max_length=150, blank=True, default="")
+    user = models.ForeignKey(
+        "auth.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="login_audits",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=300, blank=True, default="")
+
+    class Meta:
+        db_table = "login_audit"
+        verbose_name = "Audit de connexion"
+        verbose_name_plural = "Audits de connexion"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.created_at:%Y-%m-%d %H:%M} {self.event} {self.username}"

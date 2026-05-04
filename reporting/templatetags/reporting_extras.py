@@ -46,3 +46,26 @@ def format_frais(value):
         return f"{v * 100:.2f}%"
     # Montant monétaire (ex : 500, 1500)
     return f"{v:.0f} FCFA"
+
+
+@register.filter(name='in_group')
+def in_group(user, group_name):
+    """Retourne True si `user` appartient au groupe `group_name`.
+
+    Les superusers sont implicitement consideres comme membres de tous les groupes.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    return user.groups.filter(name=group_name).exists()
+
+
+@register.filter(name='can_manage')
+def can_manage(user):
+    """Acces aux pages Metadonnees / Controle (Administrateurs ou Gestionnaires)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    return user.groups.filter(name__in=["Administrateurs", "Gestionnaires"]).exists()

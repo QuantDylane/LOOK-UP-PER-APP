@@ -20,14 +20,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-=p1ts8uu#3la7+w8jzwx0n_o+*hz+54=)-k@-7s)wlzm*0w+%-",
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in {"true", "1", "yes"}
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# En production (DEBUG=False), DJANGO_SECRET_KEY DOIT etre defini dans l'environnement.
+_DEFAULT_INSECURE_SECRET = "django-insecure-=p1ts8uu#3la7+w8jzwx0n_o+*hz+54=)-k@-7s)wlzm*0w+%-"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _DEFAULT_INSECURE_SECRET if DEBUG else "")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "DJANGO_SECRET_KEY doit etre defini dans l'environnement lorsque DEBUG=False."
+    )
 
 _allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()] or []
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "axes",  # protection brute-force des connexions
     "reporting",
 ]
 
@@ -55,6 +59,14 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reporting.middleware.SessionIPMiddleware",
+    # AxesMiddleware doit etre place EN DERNIER
+    "axes.middleware.AxesMiddleware",
+]
+
+# Backends d'authentification : Axes en premier (verrouillage), puis le defaut Django
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 ROOT_URLCONF = "per_pee_reporting.urls"
@@ -69,6 +81,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "reporting.context_processors.session_settings",
             ],
         },
     },
@@ -92,18 +105,13 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
@@ -156,3 +164,59 @@ CACHES = {
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "reporting:accueil"
 LOGOUT_REDIRECT_URL = "login"
+
+# ---------------------------------------------------------------------------
+# Sessions : expiration glissante de 8h, renouvelees a chaque requete.
+# ---------------------------------------------------------------------------
+SESSION_COOKIE_AGE = 60 * 60 * 8           # 8 heures
+SESSION_SAVE_EVERY_REQUEST = True          # sliding expiration
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# ---------------------------------------------------------------------------
+# E-mail : console en dev, SMTP en prod (configurable via variables d'env).
+# ---------------------------------------------------------------------------
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("DJANGO_EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("DJANGO_EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("DJANGO_EMAIL_USE_TLS", "True").lower() in {"true", "1", "yes"}
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    "PER/PEE Reporting <no-reply@cgfgestion.local>",
+)
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2  # 2 heures
+
+# ---------------------------------------------------------------------------
+# django-axes : verrouillage anti brute-force
+# ---------------------------------------------------------------------------
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5                     # 5 tentatives
+AXES_COOLOFF_TIME = 0.25                   # 15 minutes (en heures)
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_TEMPLATE = "registration/account_locked.html"
+AXES_VERBOSE = True
+
+# ---------------------------------------------------------------------------
+# Durcissement HTTPS / Cookies (uniquement hors DEBUG).
+# ---------------------------------------------------------------------------
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = False  # CSRF doit rester lisible par le JS de Django
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True").lower() in {"true", "1", "yes"}
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    X_FRAME_OPTIONS = "DENY"

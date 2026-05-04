@@ -352,6 +352,47 @@
             .segment-card:hover { transform: none; }
             .kpi-container { margin-bottom: 2rem; }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-page::before,
+            .logo-container,
+            .login-card,
+            .marketing-section,
+            .shape,
+            .btn-login::before,
+            .login-card::before { animation: none !important; }
+            .segment-card:hover { transform: none; }
+            .btn-login:hover { transform: none; }
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 0;
+            color: #94a3b8;
+            font-size: 1.15rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            border-radius: 6px;
+            z-index: 6;
+        }
+        .password-toggle:hover { color: #3498db; background: #f1f5f9; }
+        .password-toggle:focus-visible { outline: 2px solid #3498db; outline-offset: 2px; }
+
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border: 0;
+        }
+
+        .btn-login[disabled],
+        .btn-login.is-loading { opacity: 0.85; cursor: progress; }
+        .btn-login .spinner-border { width: 1.1rem; height: 1.1rem; }
     </style>
 </head>
 <body>
@@ -440,72 +481,145 @@
                             </div>
 
                             {% if form.non_field_errors or form.errors %}
-                            <div class="alert error-alert py-3 mb-4">
+                            <div class="alert error-alert py-3 mb-4" role="alert" aria-live="assertive">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5" aria-hidden="true"></i>
                                     <span>Identifiant ou mot de passe incorrect.</span>
                                 </div>
                             </div>
                             {% endif %}
 
                             {% if next and user.is_authenticated %}
-                            <div class="alert warning-alert py-3 mb-4">
+                            <div class="alert warning-alert py-3 mb-4" role="alert" aria-live="polite">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-shield-lock-fill me-2 fs-5"></i>
-                                    <span>Accès réservé. Connectez-vous avec un compte autorisé.</span>
+                                    <i class="bi bi-shield-lock-fill me-2 fs-5" aria-hidden="true"></i>
+                                    <span>Acc&egrave;s r&eacute;serv&eacute;. Connectez-vous avec un compte autoris&eacute;.</span>
                                 </div>
                             </div>
                             {% endif %}
 
-                            <form method="post" novalidate>
+                            <form method="post" novalidate id="loginForm">
                                 {% csrf_token %}
 
                                 <div class="form-group">
-                                    <i class="bi bi-person input-icon"></i>
+                                    <label for="id_username" class="visually-hidden">Identifiant</label>
+                                    <i class="bi bi-person input-icon" aria-hidden="true"></i>
                                     <input type="text"
                                            name="username"
                                            id="id_username"
                                            class="form-control"
                                            placeholder="Identifiant"
                                            autocomplete="username"
+                                           autocapitalize="none"
+                                           spellcheck="false"
                                            autofocus
                                            required>
                                 </div>
 
                                 <div class="form-group">
-                                    <i class="bi bi-lock input-icon"></i>
+                                    <label for="id_password" class="visually-hidden">Mot de passe</label>
+                                    <i class="bi bi-lock input-icon" aria-hidden="true"></i>
                                     <input type="password"
                                            name="password"
                                            id="id_password"
                                            class="form-control"
                                            placeholder="Mot de passe"
                                            autocomplete="current-password"
-                                           required>
+                                           required
+                                           style="padding-right: 3rem;">
+                                    <button type="button"
+                                            class="password-toggle"
+                                            id="togglePassword"
+                                            aria-label="Afficher le mot de passe"
+                                            aria-pressed="false"
+                                            aria-controls="id_password">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                    </button>
                                 </div>
 
                                 <input type="hidden" name="next" value="{{ next }}">
 
-                                <button type="submit" class="btn btn-login w-100 mt-2">
-                                    <i class="bi bi-box-arrow-in-right me-2"></i>
-                                    Se connecter
+                                <div class="d-flex justify-content-end mb-3">
+                                    <a href="{% url 'password_reset' %}" class="text-decoration-none small" style="color:#3498db;">
+                                        <i class="bi bi-question-circle me-1" aria-hidden="true"></i>Mot de passe oubli&eacute;&nbsp;?
+                                    </a>
+                                </div>
+
+                                <button type="submit" class="btn btn-login w-100 mt-1" id="loginSubmit">
+                                    <span class="btn-label">
+                                        <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
+                                        Se connecter
+                                    </span>
+                                    <span class="btn-loading d-none">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Connexion en cours&hellip;
+                                    </span>
                                 </button>
                             </form>
 
                             <div class="text-center mt-4 pt-3 border-top">
                                 <small class="text-muted">
-                                    <i class="bi bi-shield-check me-1"></i>
-                                    Connexion sécurisée
+                                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
+                                    Connexion s&eacute;curis&eacute;e
                                 </small>
                             </div>
                         </div>
                     </div>
 
                     <p class="footer-text text-center mt-4 mb-0">
-                        © {% now "Y" %} CGF Gestion — Tous droits réservés
+                        &copy; {% now "Y" %} CGF Gestion &mdash; Tous droits r&eacute;serv&eacute;s
                     </p>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+    (function () {
+        // Toggle visibilite du mot de passe
+        var btn = document.getElementById('togglePassword');
+        var input = document.getElementById('id_password');
+        if (btn && input) {
+            btn.addEventListener('click', function () {
+                var isPwd = input.type === 'password';
+                input.type = isPwd ? 'text' : 'password';
+                btn.setAttribute('aria-pressed', String(isPwd));
+                btn.setAttribute('aria-label', isPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+                var icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('bi-eye', !isPwd);
+                    icon.classList.toggle('bi-eye-slash', isPwd);
+                }
+                input.focus();
+            });
+        }
+
+        // Memorisation de l'identifiant (jamais le mot de passe)
+        var userField = document.getElementById('id_username');
+        if (userField) {
+            try {
+                var saved = window.localStorage.getItem('lookup_per_username');
+                if (saved && !userField.value) { userField.value = saved; }
+            } catch (e) { /* localStorage indispo */ }
+        }
+
+        // Etat chargement du bouton
+        var form = document.getElementById('loginForm');
+        var submit = document.getElementById('loginSubmit');
+        if (form && submit) {
+            form.addEventListener('submit', function () {
+                if (userField) {
+                    try { window.localStorage.setItem('lookup_per_username', userField.value); } catch (e) {}
+                }
+                submit.classList.add('is-loading');
+                submit.disabled = true;
+                var lab = submit.querySelector('.btn-label');
+                var ld = submit.querySelector('.btn-loading');
+                if (lab) lab.classList.add('d-none');
+                if (ld) ld.classList.remove('d-none');
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

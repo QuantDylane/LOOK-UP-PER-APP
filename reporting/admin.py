@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sicav, ValeurLiquidative
+from .models import Sicav, ValeurLiquidative, LoginAudit
 
 
 @admin.register(Sicav)
@@ -18,3 +18,17 @@ class ValeurLiquidativeAdmin(admin.ModelAdmin):
     search_fields = ['nom_fcp', 'depositaire']
     date_hierarchy = 'date'
     ordering = ['-date']
+
+
+@admin.register(LoginAudit)
+class LoginAuditAdmin(admin.ModelAdmin):
+    list_display = ['created_at', 'event', 'username', 'ip_address', 'user_agent']
+    list_filter = ['event', 'created_at']
+    search_fields = ['username', 'ip_address']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    readonly_fields = [f.name for f in LoginAudit._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+

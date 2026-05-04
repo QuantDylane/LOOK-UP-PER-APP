@@ -3,12 +3,13 @@ from django.urls import path
 
 from . import views
 from . import views_export
+from .decorators import admin_required, gestionnaire_required
 
 app_name = 'reporting'
 
 
 def _superuser_required(view_func):
-    """Accès réservé aux superusers connectés."""
+    """Compat: ancien helper, conserve pour ne pas casser d'eventuelles refs."""
     return user_passes_test(
         lambda u: u.is_active and u.is_superuser,
         login_url='login',
@@ -16,15 +17,16 @@ def _superuser_required(view_func):
 
 
 L = login_required          # login requis
-S = _superuser_required     # superuser requis
+S = admin_required          # acces admin (superuser ou groupe Administrateurs)
+G = gestionnaire_required   # acces gestion (Administrateurs ou Gestionnaires)
 
 
 urlpatterns = [
     path('', L(views.accueil), name='accueil'),
     path('analyse-pee-per/', L(views.analyse_pee_per), name='analyse_pee_per'),
     path('analyse-client/', L(views.analyse_client), name='analyse_client'),
-    path('metadonnees/', S(views.metadonnees), name='metadonnees'),
-    path('controle/', S(views.controle), name='controle'),
+    path('metadonnees/', G(views.metadonnees), name='metadonnees'),
+    path('controle/', G(views.controle), name='controle'),
     path('controle/sicav/<int:pk>/supprimer/', S(views.controle_supprimer_sicav), name='controle_supprimer_sicav'),
     path('controle/sicav/<int:pk>/vl-proche/', S(views.controle_appliquer_vl_proche), name='controle_appliquer_vl_proche'),
     path('controle/doublons/purger/', S(views.controle_purger_doublons), name='controle_purger_doublons'),
@@ -56,22 +58,22 @@ urlpatterns = [
     path('api/client/<str:numero_compte>/historique/', L(views.api_client_historique), name='api_client_historique'),
     path('api/client/<str:numero_compte>/evolution/', L(views.api_client_evolution), name='api_client_evolution'),
 
-    # Import/Export CSV - FCP (metadonnees : superuser only)
-    path('metadonnees/exporter-fcp/', S(views.exporter_fcp), name='exporter_fcp'),
-    path('metadonnees/exporter-vl/', S(views.exporter_vl), name='exporter_vl'),
-    path('metadonnees/importer-fcp/', S(views.importer_fcp), name='importer_fcp'),
-    path('metadonnees/importer-vl/', S(views.importer_vl), name='importer_vl'),
+    # Import/Export CSV - FCP (metadonnees : gestionnaires + admins)
+    path('metadonnees/exporter-fcp/', G(views.exporter_fcp), name='exporter_fcp'),
+    path('metadonnees/exporter-vl/', G(views.exporter_vl), name='exporter_vl'),
+    path('metadonnees/importer-fcp/', G(views.importer_fcp), name='importer_fcp'),
+    path('metadonnees/importer-vl/', G(views.importer_vl), name='importer_vl'),
 
     # Import Excel avec preview - FCP
-    path('metadonnees/analyser-excel/', S(views.analyser_fichier_excel), name='analyser_excel'),
-    path('metadonnees/executer-import-excel/', S(views.executer_import_excel), name='executer_import_excel'),
+    path('metadonnees/analyser-excel/', G(views.analyser_fichier_excel), name='analyser_excel'),
+    path('metadonnees/executer-import-excel/', G(views.executer_import_excel), name='executer_import_excel'),
 
     # Modification FCP
-    path('metadonnees/modifier-fcp/', S(views.modifier_fcp), name='modifier_fcp'),
+    path('metadonnees/modifier-fcp/', G(views.modifier_fcp), name='modifier_fcp'),
 
     # Import/Export - SICAV (PEE/PER)
-    path('metadonnees/exporter-sicav/', S(views.exporter_sicav), name='exporter_sicav'),
-    path('metadonnees/analyser-sicav-excel/', S(views.analyser_sicav_excel), name='analyser_sicav_excel'),
-    path('metadonnees/executer-import-sicav-excel/', S(views.executer_import_sicav_excel), name='executer_import_sicav_excel'),
-    path('metadonnees/modele-sicav/', S(views.telecharger_modele_sicav), name='telecharger_modele_sicav'),
+    path('metadonnees/exporter-sicav/', G(views.exporter_sicav), name='exporter_sicav'),
+    path('metadonnees/analyser-sicav-excel/', G(views.analyser_sicav_excel), name='analyser_sicav_excel'),
+    path('metadonnees/executer-import-sicav-excel/', G(views.executer_import_sicav_excel), name='executer_import_sicav_excel'),
+    path('metadonnees/modele-sicav/', G(views.telecharger_modele_sicav), name='telecharger_modele_sicav'),
 ]
