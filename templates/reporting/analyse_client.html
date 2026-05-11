@@ -167,8 +167,14 @@
                 <div class="row g-3 mb-3">
                     <div class="col-lg-8">
                         <div class="card dashboard-card h-100">
-                            <div class="card-header bg-white">
-                                <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Évolution de la valeur du portefeuille</h6>
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Évolution du portefeuille <span class="text-muted fw-normal small">(base 100)</span></h6>
+                                <div class="form-check form-switch mb-0 ms-3">
+                                    <input class="form-check-input" type="checkbox" id="togglePlanEvolution"
+                                           onchange="chargerEvolutionClient()" role="switch">
+                                    <label class="form-check-label small text-muted" for="togglePlanEvolution"
+                                           title="Afficher l'évolution du plan sur la même période">Afficher le plan</label>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div style="height:260px;position:relative;">
@@ -375,6 +381,7 @@
 
 <script>
 let selectedClient = null;
+let currentClientPlan = null;
 let clientFcps = [];
 let chartClientEvolution = null, chartClientAllocation = null, chartClientFlux = null, chartClientFcpPerf = null;
 // Palette charte : uniquement bleus et gris
@@ -426,9 +433,14 @@ function filtrerClients() {
 
 function selectClient(numero) {
     selectedClient = numero;
+    const item = document.querySelector(`.client-item[data-numero="${numero}"]`);
+    currentClientPlan = item ? (item.dataset.plan || null) : null;
     document.querySelectorAll('.client-item').forEach(it => {
         it.classList.toggle('active', it.dataset.numero === numero);
     });
+    // Réinitialiser la case à cocher du plan à chaque changement de client
+    const cb = document.getElementById('togglePlanEvolution');
+    if (cb) cb.checked = false;
     chargerDetailsClient();
     chargerEvolutionClient();
 }
@@ -533,48 +545,96 @@ function chargerEvolutionClient() {
     if (!selectedClient) return;
     const dateDebut = document.getElementById('dateDebut').value;
     const dateFin = document.getElementById('dateFin').value;
+    const afficherPlan = document.getElementById('togglePlanEvolution')?.checked && !!currentClientPlan;
+
     fetch(`/api/client/${encodeURIComponent(selectedClient)}/evolution/?date_debut=${dateDebut}&date_fin=${dateFin}`)
         .then(r => r.json())
-        .then(data => {
-            if (data.error) return;
+        .then(clientData => {
+            if (clientData.error) return;
 
-            // Courbe de valeur
-            if (chartClientEvolution) chartClientEvolution.destroy();
-            chartClientEvolution = new Chart(document.getElementById('chartClientEvolution').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: data.serie.map(s => s.label),
-                    datasets: [{
-                        label: 'Valeur du portefeuille',
-                        data: data.serie.map(s => s.valeur),
-                        borderColor: COLOR_PRIMARY,
-                        backgroundColor: 'rgba(10,35,66,0.08)',
-                        borderWidth: 2.5, tension: 0.3, fill: true,
-                        pointBackgroundColor: COLOR_POSITIVE, pointRadius: 3, pointHoverRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: ctx => formatMontant(ctx.parsed.y) } }
-                    },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { ticks: { callback: v => formatMontant(v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
-                    }
+            function toBase100(values) {
+                const first = values.find(v => v != null && v !== 0);
+                if (!first) return values.map(() => null);
+                return values.map(v => v != null ? parseFloat(((v / first) * 100).toFixed(4)) : null);
+            }
+
+            function buildEvolutionChart(planData) {
+                const clientBase100 = toBase100(clientData.serie.map(s => s.valeur));
+                const datasets = [{
+                    label: 'Portefeuille client',
+                    data: clientBase100,
+                    borderColor: COLOR_PRIMARY,
+                    backgroundColor: 'rgba(10,35,66,0.08)',
+                    borderWidth: 2.5, tension: 0.3, fill: true,
+                    pointBackgroundColor: COLOR_POSITIVE, pointRadius: 3, pointHoverRadius: 5
+                }];
+                if (planData) {
+                    const planBase100 = toBase100(planData.serie.map(s => s.valeur));
+                    datasets.push({
+                        label: `Plan : ${currentClientPlan}`,
+                        data: planBase100,
+                        borderColor: '#3A6CA8',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2, tension: 0.3, fill: false,
+                        borderDash: [6, 4],
+                        pointBackgroundColor: '#3A6CA8', pointRadius: 3, pointHoverRadius: 5
+                    });
                 }
-            });
+                if (chartClientEvolution) chartClientEvolution.destroy();
+                chartClientEvolution = new Chart(document.getElementById('chartClientEvolution').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: clientData.serie.map(s => s.label),
+                        datasets
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: !!planData,
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const v = ctx.parsed.y;
+                                        if (v == null) return `${ctx.dataset.label} : -`;
+                                        const sign = v >= 100 ? '+' : '';
+                                        return `${ctx.dataset.label} : ${sign}${formatNumber(v - 100)}% (base 100 = ${formatNumber(v)})`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                ticks: { callback: v => formatNumber(v) },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (afficherPlan) {
+                fetch(`/api/portefeuille/${encodeURIComponent(currentClientPlan)}/evolution/?date_debut=${dateDebut}&date_fin=${dateFin}`)
+                    .then(r => r.json())
+                    .then(planData => buildEvolutionChart(planData.error ? null : planData))
+                    .catch(() => buildEvolutionChart(null));
+            } else {
+                buildEvolutionChart(null);
+            }
 
             // Flux
             if (chartClientFlux) chartClientFlux.destroy();
             chartClientFlux = new Chart(document.getElementById('chartClientFlux').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: data.serie.map(s => s.label),
+                    labels: clientData.serie.map(s => s.label),
                     datasets: [
-                        { label: 'Souscriptions', data: data.serie.map(s => s.souscriptions), backgroundColor: COLOR_POSITIVE, borderRadius: 4, stack: 'flux' },
-                        { label: 'Rachats',       data: data.serie.map(s => -s.rachats),     backgroundColor: COLOR_NEGATIVE, borderRadius: 4, stack: 'flux' }
+                        { label: 'Souscriptions', data: clientData.serie.map(s => s.souscriptions), backgroundColor: COLOR_POSITIVE, borderRadius: 4, stack: 'flux' },
+                        { label: 'Rachats',       data: clientData.serie.map(s => -s.rachats),     backgroundColor: COLOR_NEGATIVE, borderRadius: 4, stack: 'flux' }
                     ]
                 },
                 options: {
